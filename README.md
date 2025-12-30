@@ -18,6 +18,6 @@ On top of this graph sits a query layer. The user can ask questions such as: “
 pnpm install
 pnpm link --global
 taskgraph index fixtures/rufus-projects
+taskgraph query
 taskgraph query "meeting"
-taskgraph query "meeting" --interactive
 ```

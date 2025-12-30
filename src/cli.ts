@@ -7,10 +7,11 @@ import { runInteractive } from "./interactive";
 
 function printHelp() {
   console.log("taskgraph index <dir> [--out data/index.json]");
-  console.log("taskgraph query <query> [--index data/index.json] [--limit 10] [--interactive]");
+  console.log("taskgraph query [query] [--index data/index.json] [--limit 10]");
+  console.log("If query is omitted, interactive mode starts.");
 }
 
-export function runCli(argv = process.argv.slice(2)) {
+export async function runCli(argv = process.argv.slice(2)) {
   if (argv.length === 0 || argv.includes("-h") || argv.includes("--help")) {
     printHelp();
     return 0;
@@ -29,18 +30,38 @@ export function runCli(argv = process.argv.slice(2)) {
     return 0;
   }
   if (command === "query") {
-    const query = rest[0] ?? "";
-    const idx = rest.indexOf("--index");
-    const limitIdx = rest.indexOf("--limit");
-    const interactive = rest.includes("--interactive");
-    const indexPath = idx === -1 ? "data/index.json" : rest[idx + 1];
-    const limit = limitIdx === -1 ? 10 : Number(rest[limitIdx + 1] ?? 10);
+    let query: string | undefined;
+    let indexPath = "data/index.json";
+    let limit = 10;
+    let interactive = false;
+
+    for (let i = 0; i < rest.length; i += 1) {
+      const arg = rest[i];
+      if (arg === "--index") {
+        indexPath = rest[i + 1] ?? indexPath;
+        i += 1;
+        continue;
+      }
+      if (arg === "--limit") {
+        limit = Number(rest[i + 1] ?? limit);
+        i += 1;
+        continue;
+      }
+      if (arg === "--interactive") {
+        interactive = true;
+        continue;
+      }
+      if (!arg.startsWith("--") && query === undefined) {
+        query = arg;
+      }
+    }
+
     if (!existsSync(indexPath)) {
       console.error(`Index not found at ${indexPath}`);
       console.error("Run: taskgraph index <dir> [--out data/index.json]");
       return 1;
     }
-    if (interactive) return runInteractive(indexPath, limit);
+    if (interactive || query === undefined) return runInteractive(indexPath, limit);
     const data = readIndex(indexPath);
     const results = searchNodes(data.nodes ?? [], query, limit);
     for (const n of results) {

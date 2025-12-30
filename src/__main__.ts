@@ -1,3 +1,5 @@
 import { runCli } from "./cli";
 
-process.exit(runCli());
+runCli().then((code) => {
+  process.exit(code);
+});
