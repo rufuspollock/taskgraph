@@ -12,3 +12,11 @@ Rather than imposing a fixed hierarchy of projects, tasks, and subtasks, the sys
 
 On top of this graph sits a query layer. The user can ask questions such as: “What can I do in 10 minutes?”, “What is the next available task in this chain?”, or “What tasks belong to this area of work and are unblocked?” The interface—whether textual, tabular, or visual—is secondary to the core capability: a continuously updated, queryable database of tasks derived from Markdown, capable of supporting both fast next-action selection and higher-level reasoning about the flow and structure of work.
 
+## MVP usage
+
+```bash
+pnpm install
+pnpm dev -- index fixtures/rufus-projects
+pnpm dev -- query "meeting"
+pnpm dev -- query "meeting" --interactive
+```
