@@ -12,3 +12,42 @@ Rather than imposing a fixed hierarchy of projects, tasks, and subtasks, the sys
 
 On top of this graph sits a query layer. The user can ask questions such as: “What can I do in 10 minutes?”, “What is the next available task in this chain?”, or “What tasks belong to this area of work and are unblocked?” The interface—whether textual, tabular, or visual—is secondary to the core capability: a continuously updated, queryable database of tasks derived from Markdown, capable of supporting both fast next-action selection and higher-level reasoning about the flow and structure of work.
 
+## MVP usage
+
+```bash
+pnpm install
+pnpm link --global
+taskgraph index fixtures/rufus-projects
+taskgraph query
+taskgraph query "meeting"
+```
+
+## Motivation
+
+Below is a concise distillation in two parts: a tidy transcript, followed by two job stories.
+
+---
+
+## Tidy transcript
+
+When I come to my work—whether in Obsidian or elsewhere—I want to know what I should work on next, without spending time reviewing and prioritizing tasks. I have tasks at many scales, from small checklist items to large projects, and the distinction between projects, tasks, and subtasks is often arbitrary and nested. Some projects contain other projects; some tasks unfold into chains of further tasks. Rigid hierarchies are therefore not very helpful.
+
+What I want instead is a way to treat everything as tasks of the same underlying type, connected by relationships. From this, I want to determine what to do next based on my current context and constraints, such as available time (e.g. 10 minutes vs. 2 hours), similar to the intent of GTD but without manual prioritization each time.
+
+A starting idea is to build a local, queryable database of tasks, extracted from my existing notes and task lists, including their relationships (e.g. dependencies, sequences, groupings). One way to represent this is as a directed acyclic graph of tasks. On top of that database, I want to be able to slice, filter, and query tasks quickly to surface “what should I do now?”
+
+In addition, I want to visualize tasks and their relationships. For example, in a small project with ~15 tasks, Kanban boards are unsatisfying because ordering, sequencing, and grouping are weak. I want to see chains of work and subgraphs—clusters of tasks that belong together—and understand how the task I am doing now fits into a longer sequence of actions.
+
+At this stage, I am clearer about the underlying need (a task graph and queryable database) than about the final interface. The immediate goal is to externalize tasks and their relationships in a form that supports both fast “next action” selection and meaningful visualization.
+
+---
+
+## Job story 1: deciding what to work on now
+
+When I start a work session and have a specific context (e.g. limited time, energy, or focus), I want the system to surface the most appropriate next task automatically, so that I can begin work immediately without scanning, prioritizing, or re-deciding across my entire task landscape.
+
+---
+
+## Job story 2: understanding and shaping the flow of work
+
+When I am planning or reviewing a project, I want to see my tasks as a structured graph—showing sequences, dependencies, and meaningful groupings—so that I can understand how individual actions fit into longer chains of work, identify what comes next, and reason about progress beyond flat lists or Kanban columns.
