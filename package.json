@@ -7,7 +7,7 @@
     "dev": "tsx src/cli.ts"
   },
   "bin": {
-    "taskgraph": "src/cli.ts"
+    "tg": "src/cli.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

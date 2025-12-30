@@ -16,7 +16,7 @@ On top of this graph sits a query layer. The user can ask questions such as: “
 
 ```bash
 pnpm install
-pnpm dev -- index fixtures/rufus-projects
-pnpm dev -- query "meeting"
-pnpm dev -- query "meeting" --interactive
+pnpm exec tg index fixtures/rufus-projects
+pnpm exec tg query "meeting"
+pnpm exec tg query "meeting" --interactive
 ```
