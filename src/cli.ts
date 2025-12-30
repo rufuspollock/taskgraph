@@ -5,10 +5,14 @@ import { writeIndex, readIndex } from "./storage";
 import { searchNodes } from "./search";
 import { runInteractive } from "./interactive";
 
+function printHelp() {
+  console.log("taskgraph index <dir> [--out data/index.json]");
+  console.log("taskgraph query <query> [--index data/index.json] [--limit 10] [--interactive]");
+}
+
 export function runCli(argv = process.argv.slice(2)) {
-  if (argv.includes("-h") || argv.includes("--help")) {
-    console.log("taskgraph index <dir> [--out data/index.json]");
-    console.log("taskgraph query <query> [--index data/index.json] [--limit 10] [--interactive]");
+  if (argv.length === 0 || argv.includes("-h") || argv.includes("--help")) {
+    printHelp();
     return 0;
   }
   const [command, ...rest] = argv;
@@ -40,6 +44,7 @@ export function runCli(argv = process.argv.slice(2)) {
     return 0;
   }
   console.error("Unknown command");
+  printHelp();
   return 1;
 }
 
