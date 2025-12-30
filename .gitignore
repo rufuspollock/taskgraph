@@ -1,2 +1,6 @@
 .worktrees/
 .pnpm-store/
+fixtures/rufus-projects
+node_modules
+# index from taskgraph
+data
