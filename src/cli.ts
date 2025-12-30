@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { indexMarkdown } from "./indexer";
 import { writeIndex, readIndex } from "./storage";
@@ -35,6 +35,11 @@ export function runCli(argv = process.argv.slice(2)) {
     const interactive = rest.includes("--interactive");
     const indexPath = idx === -1 ? "data/index.json" : rest[idx + 1];
     const limit = limitIdx === -1 ? 10 : Number(rest[limitIdx + 1] ?? 10);
+    if (!existsSync(indexPath)) {
+      console.error(`Index not found at ${indexPath}`);
+      console.error("Run: taskgraph index <dir> [--out data/index.json]");
+      return 1;
+    }
     if (interactive) return runInteractive(indexPath, limit);
     const data = readIndex(indexPath);
     const results = searchNodes(data.nodes ?? [], query, limit);
