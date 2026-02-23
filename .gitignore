@@ -4,3 +4,4 @@ fixtures/rufus-projects
 node_modules
 # index from taskgraph
 data
+NOW.md

@@ -1,0 +1,1 @@
+- [ ] I want to parse out time estimates which have a timer emoji next to them, and then time. I also want to pass out things like the next emoji, which means next. Basically, I have a bunch of emojis that I'm using in their meaning, which I should also pause out at some point.
