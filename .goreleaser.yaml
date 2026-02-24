@@ -1,0 +1,35 @@
+version: 2
+
+project_name: tg
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: tg
+    main: ./cmd/tg
+    binary: tg
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: tg-archive
+    ids:
+      - tg
+    formats:
+      - tar.gz
+    name_template: "tg_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  draft: false
+  prerelease: auto

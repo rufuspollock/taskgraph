@@ -25,6 +25,43 @@ go test ./...
 go build ./cmd/tg
 ```
 
+## Install (macOS/Linux)
+
+Latest release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rgrp/taskgraph/main/scripts/install.sh | bash
+```
+
+Specific version:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rgrp/taskgraph/main/scripts/install.sh | bash -s -- v0.1.0
+```
+
+Custom install directory:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rgrp/taskgraph/main/scripts/install.sh | INSTALL_DIR="$HOME/bin" bash
+```
+
+Installer scope in v0:
+
+- Supported OS: macOS, Linux
+- Supported architectures: amd64, arm64
+- Binary install location: `${INSTALL_DIR:-$HOME/.local/bin}`
+
+## Releases
+
+Releases are built automatically by GitHub Actions when a tag matching `v*` is pushed.
+
+Example:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
 ## Developer notes
 
 ### 2026-02-24: implementation language direction
