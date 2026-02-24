@@ -1,28 +1,17 @@
 # TaskGraph
 
-TaskGraph is a local-first CLI for capturing tasks and surfacing task lists. The current reboot baseline focuses on fast daily capture with minimal setup.
+TaskGraph is a local-first CLI for quick task capture and simple task listing. 
 
-**Current status (Go reboot v0):**
+Designed as an AI-friendly planning substrate: a lightweight, non-invasive way to build a local, queryable task graph that both humans and AI tools can use to decide what to do next.
 
-- **`init` command:** Initializes `.taskgraph/` in the current directory with `config.yml` and `tasks.md`.
-- **`add` / `create` command:** Adds one task as a markdown checklist line to `.taskgraph/tasks.md`. Auto-initializes in the current directory if no `.taskgraph` is found while walking up parent directories.
-- **`list` command:** Prints checklist task lines from `.taskgraph/tasks.md`.
+Markdown-oriented, it adds a lightweight, natural performant interface to what you already have -- be that checklists scattered across markdown files, a need to capture quickly into an inbox, or AI oriented coding workflows.
 
-## v0 usage
+## Quick Example
 
 ```bash
-go build -o tg ./cmd/tg
-./tg init
-./tg add "buy milk"
-./tg create "book dentist"
-./tg list
-```
-
-## Development
-
-```bash
-go test ./...
-go build ./cmd/tg
+tg add "buy milk"
+tg create "book dentist"
+tg list
 ```
 
 ## Install (macOS/Linux)
@@ -45,34 +34,69 @@ Custom install directory:
 curl -fsSL https://raw.githubusercontent.com/rufuspollock/taskgraph/main/scripts/install.sh | INSTALL_DIR="$HOME/bin" bash
 ```
 
-Installer scope in v0:
+Installer scope (v0):
 
 - Supported OS: macOS, Linux
 - Supported architectures: amd64, arm64
 - Binary install location: `${INSTALL_DIR:-$HOME/.local/bin}`
 
-## Releases
+## Usage
 
-Releases are built automatically by GitHub Actions when a tag matching `v*` is pushed.
+Initialize explicitly:
 
-Example:
+```bash
+tg init
+```
+
+Add tasks:
+
+```bash
+tg add "buy milk"
+tg create "book dentist"
+```
+
+List tasks:
+
+```bash
+tg list
+```
+
+Notes:
+
+- `tg add` auto-initializes `.taskgraph/` in the current directory if none exists in parent directories.
+- Tasks are stored as checklist lines in `.taskgraph/tasks.md`.
+
+## Developer Guide
+
+Run tests:
+
+```bash
+go test ./...
+```
+
+Build locally:
+
+```bash
+go build -o tg ./cmd/tg
+```
+
+Use local build in your shell:
+
+```bash
+./tg add "test task"
+```
+
+Optional local install while developing:
+
+```bash
+go install ./cmd/tg
+```
+
+Release process:
+
+- Releases are built automatically by GitHub Actions when a tag matching `v*` is pushed.
 
 ```bash
 git tag v0.2.0
 git push origin v0.2.0
 ```
-
-## Developer notes
-
-### 2026-02-24: implementation language direction
-
-We are rebooting implementation in Go.
-
-Reasoning:
-
-- Primary goal is very easy cross-platform installation for daily dogfooding.
-- Go gives us straightforward single-binary distribution for macOS, Linux, and Windows.
-- It preserves fast iteration speed for early CLI/product shaping (`tg add` / `tg create`) better than Rust at this stage.
-- It avoids requiring end users to install and manage a Node runtime.
-
-Decision: move forward with Go as the primary implementation language for the reboot.
