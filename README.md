@@ -60,3 +60,18 @@ When I start a work session and have a specific context (e.g. limited time, ener
 ## Job story 2: understanding and shaping the flow of work
 
 When I am planning or reviewing a project, I want to see my tasks as a structured graph—showing sequences, dependencies, and meaningful groupings—so that I can understand how individual actions fit into longer chains of work, identify what comes next, and reason about progress beyond flat lists or Kanban columns.
+
+## Developer notes
+
+### 2026-02-24: implementation language direction
+
+We are rebooting implementation in Go.
+
+Reasoning:
+
+- Primary goal is very easy cross-platform installation for daily dogfooding.
+- Go gives us straightforward single-binary distribution for macOS, Linux, and Windows.
+- It preserves fast iteration speed for early CLI/product shaping (`tg add` / `tg create`) better than Rust at this stage.
+- It avoids requiring end users to install and manage a Node runtime.
+
+Decision: move forward with Go as the primary implementation language for the reboot.
