@@ -68,7 +68,8 @@ asset_name() {
   local version="$1"
   local os="$2"
   local arch="$3"
-  echo "tg_${version}_${os}_${arch}.tar.gz"
+  local file_version="${version#v}"
+  echo "tg_${file_version}_${os}_${arch}.tar.gz"
 }
 
 target_dir() {

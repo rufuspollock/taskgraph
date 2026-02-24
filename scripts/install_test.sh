@@ -49,7 +49,8 @@ TG_INSTALL_LATEST_JSON='{"tag_name":"v9.9.9"}'
 assert_eq "$(resolve_version "")" "v9.9.9" "resolve_version latest"
 assert_eq "$(resolve_version "v1.2.3")" "v1.2.3" "resolve_version explicit"
 
-assert_eq "$(asset_name v1.2.3 darwin amd64)" "tg_v1.2.3_darwin_amd64.tar.gz" "asset_name"
+assert_eq "$(asset_name v1.2.3 darwin amd64)" "tg_1.2.3_darwin_amd64.tar.gz" "asset_name strips v-prefix"
+assert_eq "$(asset_name 1.2.3 darwin amd64)" "tg_1.2.3_darwin_amd64.tar.gz" "asset_name plain version"
 
 unset INSTALL_DIR
 assert_eq "$(target_dir)" "$HOME/.local/bin" "target_dir default"
