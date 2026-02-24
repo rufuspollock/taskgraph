@@ -30,19 +30,19 @@ go build ./cmd/tg
 Latest release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/rgrp/taskgraph/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/rufuspollock/taskgraph/main/scripts/install.sh | bash
 ```
 
 Specific version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/rgrp/taskgraph/main/scripts/install.sh | bash -s -- v0.1.0
+curl -fsSL https://raw.githubusercontent.com/rufuspollock/taskgraph/main/scripts/install.sh | bash -s -- v0.1.0
 ```
 
 Custom install directory:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/rgrp/taskgraph/main/scripts/install.sh | INSTALL_DIR="$HOME/bin" bash
+curl -fsSL https://raw.githubusercontent.com/rufuspollock/taskgraph/main/scripts/install.sh | INSTALL_DIR="$HOME/bin" bash
 ```
 
 Installer scope in v0:

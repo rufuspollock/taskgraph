@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="${TG_INSTALL_REPO:-rgrp/taskgraph}"
+REPO="${TG_INSTALL_REPO:-rufuspollock/taskgraph}"
 
 map_os() {
   local raw="$1"
