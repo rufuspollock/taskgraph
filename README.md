@@ -1,22 +1,28 @@
 # TaskGraph
 
-TaskGraph is a local-first tool for indexing and querying tasks from a collection of Markdown files. It treats checklist items as tasks and files as projects, building a unified, queryable graph of all work.
+TaskGraph is a local-first CLI for capturing tasks and surfacing task lists. The current reboot baseline focuses on fast daily capture with minimal setup.
 
-**Current status (MVP):**
+**Current status (Go reboot v0):**
 
-- **`index` command:** Recursively finds all Markdown files, parses them for tasks and metadata, and stores them in a local database. (Done)
-- **`query` command:** Provides an interactive search interface to the indexed task graph. (In progress)
+- **`init` command:** Initializes `.taskgraph/` in the current directory with `config.yml` and `tasks.md`.
+- **`add` / `create` command:** Adds one task as a markdown checklist line to `.taskgraph/tasks.md`. Auto-initializes in the current directory if no `.taskgraph` is found while walking up parent directories.
+- **`list` command:** Prints checklist task lines from `.taskgraph/tasks.md`.
 
-## MVP usage
+## v0 usage
 
 ```bash
-pnpm install
-pnpm link --global
-taskgraph index fixtures/demo
-# interactive querying
-taskgraph query
-# query for home
-taskgraph query "home"
+go build -o tg ./cmd/tg
+./tg init
+./tg add "buy milk"
+./tg create "book dentist"
+./tg list
+```
+
+## Development
+
+```bash
+go test ./...
+go build ./cmd/tg
 ```
 
 ## Vision
