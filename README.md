@@ -92,6 +92,22 @@ Optional local install while developing:
 go install ./cmd/tg
 ```
 
+Go equivalent of `npm link` (local command linking):
+
+```bash
+# 1) Build from current checkout
+go build -o tg ./cmd/tg
+
+# 2) Link into your PATH (example target)
+mkdir -p "$HOME/.local/bin"
+ln -sf "$(pwd)/tg" "$HOME/.local/bin/tg"
+
+# 3) Optional alias command name
+ln -sf "$(pwd)/tg" "$HOME/.local/bin/taskgraph"
+```
+
+If `$HOME/.local/bin` is not in your `PATH`, add it in your shell profile.
+
 Release process:
 
 - Releases are built automatically by GitHub Actions when a tag matching `v*` is pushed.
