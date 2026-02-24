@@ -66,49 +66,62 @@ Notes:
 - `tg add` auto-initializes `.taskgraph/` in the current directory if none exists in parent directories.
 - Tasks are stored as checklist lines in `.taskgraph/tasks.md`.
 
+---
+
 ## Developer Guide
 
-Run tests:
+### Recommended Daily Workflow (Active Development)
+
+If you are actively changing code and want `tg` to always run the latest source, use this:
+
+```bash
+mkdir -p "$HOME/.local/bin"
+ln -sf "$(pwd)/scripts/tg-dev" "$HOME/.local/bin/tg"
+ln -sf "$(pwd)/scripts/tg-dev" "$HOME/.local/bin/taskgraph" # optional alias
+```
+
+Then just run `tg ...` normally while developing. No `go build` needed each edit.
+
+### Run Tests
 
 ```bash
 go test ./...
 ```
 
-Build locally:
+### One-Off Local Build
 
 ```bash
 go build -o tg ./cmd/tg
 ```
 
-Use local build in your shell:
+Run the built binary directly:
 
 ```bash
 ./tg add "test task"
 ```
 
-Optional local install while developing:
+### `go install` (Optional)
+
+Use this when you want a compiled binary in your Go bin path:
 
 ```bash
 go install ./cmd/tg
 ```
 
-Go equivalent of `npm link` (local command linking):
+Note: this is not the recommended active-dev loop, because it does not auto-refresh after source edits.
+
+### Build-Based Link (Alternative)
+
+Use this if you want faster startup and do not mind rebuilding after edits:
 
 ```bash
-# 1) Build from current checkout
 go build -o tg ./cmd/tg
-
-# 2) Link into your PATH (example target)
-mkdir -p "$HOME/.local/bin"
 ln -sf "$(pwd)/tg" "$HOME/.local/bin/tg"
-
-# 3) Optional alias command name
-ln -sf "$(pwd)/tg" "$HOME/.local/bin/taskgraph"
 ```
 
 If `$HOME/.local/bin` is not in your `PATH`, add it in your shell profile.
 
-Release process:
+### Release Process
 
 - Releases are built automatically by GitHub Actions when a tag matching `v*` is pushed.
 
