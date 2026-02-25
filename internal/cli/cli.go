@@ -15,11 +15,14 @@ import (
 // Run dispatches CLI commands.
 func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 	if len(args) == 0 {
-		fmt.Fprintln(stderr, "usage: tg <command>")
-		return errors.New("missing command")
+		fmt.Fprint(stdout, helpText())
+		return nil
 	}
 
 	switch args[0] {
+	case "-h", "--help", "help":
+		fmt.Fprint(stdout, helpText())
+		return nil
 	case "init":
 		return runInit(stdout)
 	case "add", "create":
@@ -27,8 +30,41 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 	case "list":
 		return runList(stdout, stderr)
 	default:
-		return fmt.Errorf("command not implemented: %s", args[0])
+		return fmt.Errorf("unknown command: %s. Run 'tg --help'", args[0])
 	}
+}
+
+func helpText() string {
+	return `  _____         _     ____                 
+ |_   _|_ _ ___| | __/ ___|_ __ __ _ _ __  
+   | |/ _` + "`" + ` / __| |/ / |  _| '__/ _` + "`" + ` | '_ \ 
+   | | (_| \__ \   <| |_| | | | (_| | |_) |
+   |_|\__,_|___/_|\_\\____|_|  \__,_| .__/ 
+                                     |_|    
+
+TaskGraph: local-first, AI-friendly task graph CLI.
+
+USAGE
+  tg <command> [args]
+  tg -h | --help
+
+COMMANDS
+  init              Initialize .taskgraph in current directory
+  add <text>        Add a task to .taskgraph/tasks.md
+  create <text>     Alias for add
+  list              Print checklist tasks
+  help              Show this help
+
+EXAMPLES
+  tg init
+  tg add "buy milk"
+  tg create "book dentist"
+  tg list
+
+NOTES
+  - tg add auto-initializes .taskgraph if missing
+  - tasks are stored in .taskgraph/tasks.md
+`
 }
 
 func runInit(stdout io.Writer) error {

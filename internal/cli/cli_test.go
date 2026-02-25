@@ -8,6 +8,41 @@ import (
 	"testing"
 )
 
+func TestNoArgsPrintsHelp(t *testing.T) {
+	stdout, stderr, err := run([]string{})
+	if err != nil {
+		t.Fatalf("expected nil error, got %v stderr=%q", err, stderr)
+	}
+	if !strings.Contains(stdout, "TaskGraph") || !strings.Contains(stdout, "USAGE") {
+		t.Fatalf("expected help output, got %q", stdout)
+	}
+}
+
+func TestHelpFlagsPrintHelp(t *testing.T) {
+	for _, arg := range []string{"-h", "--help"} {
+		stdout, stderr, err := run([]string{arg})
+		if err != nil {
+			t.Fatalf("expected nil error for %q, got %v stderr=%q", arg, err, stderr)
+		}
+		if !strings.Contains(stdout, "COMMANDS") || !strings.Contains(stdout, "tg add") {
+			t.Fatalf("expected help output for %q, got %q", arg, stdout)
+		}
+	}
+}
+
+func TestUnknownCommandIncludesHelpHint(t *testing.T) {
+	_, stderr, err := run([]string{"bogus"})
+	if err == nil {
+		t.Fatalf("expected error for unknown command")
+	}
+	if !strings.Contains(err.Error(), "Run 'tg --help'") {
+		t.Fatalf("expected help hint in error, got %q", err.Error())
+	}
+	if stderr != "" {
+		t.Fatalf("expected empty stderr, got %q", stderr)
+	}
+}
+
 func TestInitCreatesTaskgraphFiles(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
