@@ -17,6 +17,7 @@ func FindTaskgraphRoot(startDir string) (string, bool, error) {
 		return "", false, errors.New("start directory is required")
 	}
 
+	repoRoot, _ := findGitRepoRoot(startDir)
 	cur := startDir
 	for {
 		candidate := filepath.Join(cur, taskgraphDirName)
@@ -26,6 +27,12 @@ func FindTaskgraphRoot(startDir string) (string, bool, error) {
 		}
 		if err != nil && !os.IsNotExist(err) {
 			return "", false, err
+		}
+
+		// Don't cross git repository boundaries.
+		// If we're inside a repo and reached its root with no .taskgraph, stop searching.
+		if repoRoot != "" && filepath.Clean(cur) == filepath.Clean(repoRoot) {
+			return "", false, nil
 		}
 
 		parent := filepath.Dir(cur)
@@ -147,4 +154,23 @@ func normalizePrefix(raw string) string {
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+func findGitRepoRoot(startDir string) (string, bool) {
+	cur := startDir
+	for {
+		gitPath := filepath.Join(cur, ".git")
+		if info, err := os.Stat(gitPath); err == nil {
+			// Accept both .git directory and .git file (worktree/submodule layouts).
+			if info.IsDir() || !info.IsDir() {
+				return cur, true
+			}
+		}
+
+		parent := filepath.Dir(cur)
+		if parent == cur {
+			return "", false
+		}
+		cur = parent
+	}
 }

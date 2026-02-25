@@ -45,6 +45,45 @@ func TestFindTaskgraphRootNotFound(t *testing.T) {
 	}
 }
 
+func TestFindTaskgraphRootStopsAtGitRepoBoundary(t *testing.T) {
+	root := t.TempDir()
+	outerTaskgraph := filepath.Join(root, ".taskgraph")
+	mustMkdirAll(t, outerTaskgraph)
+
+	repoRoot := filepath.Join(root, "other-repo")
+	mustMkdirAll(t, filepath.Join(repoRoot, ".git"))
+	deep := filepath.Join(repoRoot, "a", "b")
+	mustMkdirAll(t, deep)
+
+	got, found, err := FindTaskgraphRoot(deep)
+	if err != nil {
+		t.Fatalf("FindTaskgraphRoot returned err: %v", err)
+	}
+	if found {
+		t.Fatalf("expected found=false (should not cross git repo root), got root=%q", got)
+	}
+}
+
+func TestFindTaskgraphRootRespectsTaskgraphInsideRepo(t *testing.T) {
+	root := t.TempDir()
+	repoRoot := filepath.Join(root, "repo")
+	mustMkdirAll(t, filepath.Join(repoRoot, ".git"))
+	mustMkdirAll(t, filepath.Join(repoRoot, ".taskgraph"))
+	deep := filepath.Join(repoRoot, "x", "y")
+	mustMkdirAll(t, deep)
+
+	got, found, err := FindTaskgraphRoot(deep)
+	if err != nil {
+		t.Fatalf("FindTaskgraphRoot returned err: %v", err)
+	}
+	if !found {
+		t.Fatalf("expected found=true")
+	}
+	if got != repoRoot {
+		t.Fatalf("expected root %q, got %q", repoRoot, got)
+	}
+}
+
 func TestInitAtCreatesFilesAndIsIdempotent(t *testing.T) {
 	root := t.TempDir()
 
