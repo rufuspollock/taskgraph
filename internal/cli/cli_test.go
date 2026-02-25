@@ -61,6 +61,10 @@ func TestInitCreatesTaskgraphFiles(t *testing.T) {
 	}
 	assertExists(t, filepath.Join(dir, ".taskgraph", "config.yml"))
 	assertExists(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	assertExists(t, filepath.Join(dir, ".taskgraph", ".gitignore"))
+	if got := readFile(t, filepath.Join(dir, ".taskgraph", ".gitignore")); !strings.Contains(got, "taskgraph.db\n") {
+		t.Fatalf("expected .gitignore to include taskgraph.db, got %q", got)
+	}
 }
 
 func TestAddAutoInitsWhenMissing(t *testing.T) {

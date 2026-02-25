@@ -60,6 +60,9 @@ func InitAt(dir string) (string, bool, error) {
 	if err := ensureFile(filepath.Join(base, "issues.md")); err != nil {
 		return "", false, err
 	}
+	if err := ensureTaskgraphGitignore(filepath.Join(base, ".gitignore")); err != nil {
+		return "", false, err
+	}
 
 	return dir, !already, nil
 }
@@ -73,6 +76,31 @@ func ensureFile(path string) error {
 		return err
 	}
 	return f.Close()
+}
+
+func ensureTaskgraphGitignore(path string) error {
+	const entry = "taskgraph.db"
+
+	if !exists(path) {
+		return os.WriteFile(path, []byte(entry+"\n"), 0o644)
+	}
+
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	content := string(b)
+	for _, line := range strings.Split(content, "\n") {
+		if strings.TrimSpace(line) == entry {
+			return nil
+		}
+	}
+
+	if len(content) > 0 && !strings.HasSuffix(content, "\n") {
+		content += "\n"
+	}
+	content += entry + "\n"
+	return os.WriteFile(path, []byte(content), 0o644)
 }
 
 func ensureConfig(path string, rootDir string) error {

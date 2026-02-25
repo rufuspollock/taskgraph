@@ -100,6 +100,11 @@ func TestInitAtCreatesFilesAndIsIdempotent(t *testing.T) {
 
 	assertExists(t, filepath.Join(root, ".taskgraph", "config.yml"))
 	assertExists(t, filepath.Join(root, ".taskgraph", "issues.md"))
+	assertExists(t, filepath.Join(root, ".taskgraph", ".gitignore"))
+	ignore := mustReadFile(t, filepath.Join(root, ".taskgraph", ".gitignore"))
+	if !strings.Contains(ignore, "taskgraph.db\n") {
+		t.Fatalf("expected .gitignore to contain taskgraph.db entry, got %q", ignore)
+	}
 	prefix, err := ReadPrefix(root)
 	if err != nil {
 		t.Fatalf("ReadPrefix returned err: %v", err)
@@ -203,4 +208,13 @@ func assertExists(t *testing.T, path string) {
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("expected %q to exist: %v", path, err)
 	}
+}
+
+func mustReadFile(t *testing.T, path string) string {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %q failed: %v", path, err)
+	}
+	return string(b)
 }
