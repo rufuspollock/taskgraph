@@ -2,12 +2,15 @@ package cli
 
 import (
 	"bytes"
+	"database/sql"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
+
+	_ "modernc.org/sqlite"
 )
 
 func TestNoArgsPrintsHelp(t *testing.T) {
@@ -62,6 +65,7 @@ func TestInitCreatesTaskgraphFiles(t *testing.T) {
 	assertExists(t, filepath.Join(dir, ".taskgraph", "config.yml"))
 	assertExists(t, filepath.Join(dir, ".taskgraph", "issues.md"))
 	assertExists(t, filepath.Join(dir, ".taskgraph", ".gitignore"))
+	assertExists(t, filepath.Join(dir, ".taskgraph", "taskgraph.db"))
 	if got := readFile(t, filepath.Join(dir, ".taskgraph", ".gitignore")); !strings.Contains(got, "taskgraph.db\n") {
 		t.Fatalf("expected .gitignore to include taskgraph.db, got %q", got)
 	}
@@ -87,6 +91,7 @@ func TestAddAutoInitsWhenMissing(t *testing.T) {
 	if !matchesTaskLine(content, prefix, "first task") {
 		t.Fatalf("unexpected issues.md content: %q", content)
 	}
+	assertExists(t, filepath.Join(dir, ".taskgraph", "taskgraph.db"))
 }
 
 func TestAddUsesNearestAncestorTaskgraph(t *testing.T) {
@@ -207,6 +212,35 @@ func TestAddUsesTGCWDOverride(t *testing.T) {
 	content := readFile(t, filepath.Join(targetDir, ".taskgraph", "issues.md"))
 	if !strings.Contains(content, "from override") {
 		t.Fatalf("expected task in TG_CWD directory, got %q", content)
+	}
+}
+
+func TestAddUpdatesSQLiteIndex(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"add", "indexed task"})
+	if err != nil {
+		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
+	}
+
+	dbPath := filepath.Join(dir, ".taskgraph", "taskgraph.db")
+	assertExists(t, dbPath)
+
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open sqlite failed: %v", err)
+	}
+	defer db.Close()
+
+	var count int
+	if err := db.QueryRow(
+		"SELECT COUNT(*) FROM index_nodes WHERE kind = 'checklist' AND path = '.taskgraph/issues.md'",
+	).Scan(&count); err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+	if count < 1 {
+		t.Fatalf("expected at least 1 checklist node for .taskgraph/issues.md, got %d", count)
 	}
 }
 

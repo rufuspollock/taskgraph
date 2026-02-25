@@ -83,6 +83,9 @@ func runInit(stdout io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if _, _, err := buildAndStoreIndex(root); err != nil {
+		return err
+	}
 	fmt.Fprintf(stdout, "Initialized .taskgraph in %s\n", root)
 	return nil
 }
@@ -119,6 +122,9 @@ func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
 		return err
 	}
 	if err := tasks.AppendTask(taskFile, prefix, taskText); err != nil {
+		return err
+	}
+	if _, _, err := buildAndStoreIndex(root); err != nil {
 		return err
 	}
 	fmt.Fprintf(stdout, "Added task: %s\n", taskText)
@@ -163,24 +169,31 @@ func runIndex(stdout io.Writer, stderr io.Writer) error {
 		return errors.New("not initialized")
 	}
 
-	nodes, err := indexer.BuildNodes(root)
+	fileCount, nodeCount, err := buildAndStoreIndex(root)
 	if err != nil {
-		return err
-	}
-
-	dbPath := filepath.Join(root, ".taskgraph", "taskgraph.db")
-	if err := indexer.RebuildSQLite(dbPath, nodes); err != nil {
 		return err
 	}
 
 	fmt.Fprintf(
 		stdout,
 		"Indexed %d files, %d nodes into %s\n",
-		indexer.FileNodeCount(nodes),
-		len(nodes),
-		dbPath,
+		fileCount,
+		nodeCount,
+		filepath.Join(root, ".taskgraph", "taskgraph.db"),
 	)
 	return nil
+}
+
+func buildAndStoreIndex(root string) (int, int, error) {
+	nodes, err := indexer.BuildNodes(root)
+	if err != nil {
+		return 0, 0, err
+	}
+	dbPath := filepath.Join(root, ".taskgraph", "taskgraph.db")
+	if err := indexer.RebuildSQLite(dbPath, nodes); err != nil {
+		return 0, 0, err
+	}
+	return indexer.FileNodeCount(nodes), len(nodes), nil
 }
 
 func effectiveCWD() (string, error) {
