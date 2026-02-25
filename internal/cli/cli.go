@@ -35,14 +35,14 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 }
 
 func helpText() string {
-	return `  _____         _     ____                 
- |_   _|_ _ ___| | __/ ___|_ __ __ _ _ __  
-   | |/ _` + "`" + ` / __| |/ / |  _| '__/ _` + "`" + ` | '_ \ 
-   | | (_| \__ \   <| |_| | | | (_| | |_) |
-   |_|\__,_|___/_|\_\\____|_|  \__,_| .__/ 
-                                     |_|    
+	return `TaskGraph
+●─────●
+│ \ / │
+●──●──●
+ \ │ /
+  ●
 
-TaskGraph: local-first, AI-friendly task graph CLI.
+Local-first, AI-friendly task graph CLI.
 
 USAGE
   tg <command> [args]
