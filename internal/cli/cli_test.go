@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -78,7 +79,8 @@ func TestAddAutoInitsWhenMissing(t *testing.T) {
 	}
 
 	content := readFile(t, filepath.Join(dir, ".taskgraph", "tasks.md"))
-	if content != expectedTaskLine("first task") {
+	prefix := expectedPrefixForDir(dir)
+	if !matchesTaskLine(content, prefix, "first task") {
 		t.Fatalf("unexpected tasks.md content: %q", content)
 	}
 }
@@ -93,7 +95,7 @@ func TestAddUsesNearestAncestorTaskgraph(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(root, ".taskgraph"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "config.yml"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "config.yml"), []byte("prefix: root\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "tasks.md"), []byte(""), 0o644); err != nil {
@@ -115,7 +117,7 @@ func TestAddUsesNearestAncestorTaskgraph(t *testing.T) {
 	}
 
 	content := readFile(t, filepath.Join(root, ".taskgraph", "tasks.md"))
-	if content != expectedTaskLine("from nested") {
+	if !matchesTaskLine(content, "root", "from nested") {
 		t.Fatalf("unexpected root tasks.md content: %q", content)
 	}
 }
@@ -130,7 +132,8 @@ func TestCreateIsAliasForAdd(t *testing.T) {
 	}
 
 	content := readFile(t, filepath.Join(dir, ".taskgraph", "tasks.md"))
-	if content != expectedTaskLine("alias task") {
+	prefix := expectedPrefixForDir(dir)
+	if !matchesTaskLine(content, prefix, "alias task") {
 		t.Fatalf("unexpected tasks.md content: %q", content)
 	}
 }
@@ -216,5 +219,28 @@ func mustWrite(t *testing.T, path, content string) {
 }
 
 func expectedTaskLine(text string) string {
-	return "- [ ] ➕" + time.Now().Format("2006-01-02") + " " + text + "\n"
+	return "- [ ] ➕" + time.Now().Format("2006-01-02") + " [tg-abc] " + text + "\n"
+}
+
+func expectedPrefixForDir(dir string) string {
+	base := strings.ToLower(filepath.Base(dir))
+	var out []rune
+	for _, r := range base {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			out = append(out, r)
+		}
+	}
+	if len(out) == 0 {
+		return "tg"
+	}
+	if len(out) > 4 {
+		out = out[:4]
+	}
+	return string(out)
+}
+
+func matchesTaskLine(line, prefix, text string) bool {
+	pattern := `^\- \[ \] ➕` + regexp.QuoteMeta(time.Now().Format("2006-01-02")) + ` \[` + regexp.QuoteMeta(prefix) + `\-[0-9a-z]{3,8}\] ` + regexp.QuoteMeta(text) + `\n$`
+	ok, _ := regexp.MatchString(pattern, line)
+	return ok
 }

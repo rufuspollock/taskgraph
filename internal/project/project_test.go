@@ -3,6 +3,7 @@ package project
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -60,6 +61,13 @@ func TestInitAtCreatesFilesAndIsIdempotent(t *testing.T) {
 
 	assertExists(t, filepath.Join(root, ".taskgraph", "config.yml"))
 	assertExists(t, filepath.Join(root, ".taskgraph", "tasks.md"))
+	prefix, err := ReadPrefix(root)
+	if err != nil {
+		t.Fatalf("ReadPrefix returned err: %v", err)
+	}
+	if len(prefix) == 0 || len(prefix) > 4 {
+		t.Fatalf("expected prefix length 1..4, got %q", prefix)
+	}
 
 	gotRoot2, created2, err := InitAt(root)
 	if err != nil {
@@ -70,6 +78,62 @@ func TestInitAtCreatesFilesAndIsIdempotent(t *testing.T) {
 	}
 	if gotRoot2 != root {
 		t.Fatalf("expected root %q, got %q", root, gotRoot2)
+	}
+}
+
+func TestNormalizePrefix(t *testing.T) {
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{"TaskGraph", "task"},
+		{"My Project!", "mypr"},
+		{"a", "a"},
+		{"", "tg"},
+		{"---", "tg"},
+		{"AB12Z", "ab12"},
+	}
+
+	for _, tt := range tests {
+		got := normalizePrefix(tt.in)
+		if got != tt.want {
+			t.Fatalf("normalizePrefix(%q)=%q want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+func TestReadPrefixFromConfig(t *testing.T) {
+	root := t.TempDir()
+	mustMkdirAll(t, filepath.Join(root, ".taskgraph"))
+	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "config.yml"), []byte("prefix: demo\n"), 0o644); err != nil {
+		t.Fatalf("write config failed: %v", err)
+	}
+	got, err := ReadPrefix(root)
+	if err != nil {
+		t.Fatalf("ReadPrefix returned err: %v", err)
+	}
+	if got != "demo" {
+		t.Fatalf("expected demo prefix, got %q", got)
+	}
+}
+
+func TestEnsureConfigBackfillsMissingPrefix(t *testing.T) {
+	root := t.TempDir()
+	taskgraphDir := filepath.Join(root, ".taskgraph")
+	mustMkdirAll(t, taskgraphDir)
+	configPath := filepath.Join(taskgraphDir, "config.yml")
+	if err := os.WriteFile(configPath, []byte("# empty\n"), 0o644); err != nil {
+		t.Fatalf("write config failed: %v", err)
+	}
+	if err := ensureConfig(configPath, root); err != nil {
+		t.Fatalf("ensureConfig returned err: %v", err)
+	}
+	b, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read config failed: %v", err)
+	}
+	if !strings.Contains(string(b), "prefix: ") {
+		t.Fatalf("expected config to contain prefix, got %q", string(b))
 	}
 }
 

@@ -108,7 +108,11 @@ func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
 
 	taskText := strings.TrimSpace(args[1])
 	taskFile := filepath.Join(root, ".taskgraph", "tasks.md")
-	if err := tasks.AppendTask(taskFile, taskText); err != nil {
+	prefix, err := project.ReadPrefix(root)
+	if err != nil {
+		return err
+	}
+	if err := tasks.AppendTask(taskFile, prefix, taskText); err != nil {
 		return err
 	}
 	fmt.Fprintf(stdout, "Added task: %s\n", taskText)

@@ -3,6 +3,8 @@ package tasks
 import (
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 )
@@ -11,14 +13,24 @@ func TestAppendTaskWritesChecklistLine(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "tasks.md")
 
-	if err := AppendTask(path, "first task"); err != nil {
+	if err := AppendTask(path, "tg", "first task"); err != nil {
 		t.Fatalf("AppendTask returned err: %v", err)
 	}
 
 	got := readFile(t, path)
-	want := "- [ ] ➕" + todayISO() + " first task\n"
-	if got != want {
-		t.Fatalf("unexpected file contents\nwant: %q\ngot:  %q", want, got)
+	assertTaskLineFormat(t, got, "tg", "first task")
+}
+
+func TestAppendTaskUsesBracketedIDAndDate(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "tasks.md")
+
+	if err := AppendTask(path, "taskgraph", "first task"); err != nil {
+		t.Fatalf("AppendTask returned err: %v", err)
+	}
+	got := readFile(t, path)
+	if !strings.Contains(got, "➕"+todayISO()) || !strings.Contains(got, "[task-") {
+		t.Fatalf("expected date and bracketed ID, got: %q", got)
 	}
 }
 
@@ -27,15 +39,19 @@ func TestAppendTaskPreservesExistingLines(t *testing.T) {
 	path := filepath.Join(dir, "tasks.md")
 	mustWrite(t, path, "- [ ] existing")
 
-	if err := AppendTask(path, "second"); err != nil {
+	if err := AppendTask(path, "demo", "second"); err != nil {
 		t.Fatalf("AppendTask returned err: %v", err)
 	}
 
 	got := readFile(t, path)
-	want := "- [ ] existing\n- [ ] ➕" + todayISO() + " second\n"
-	if got != want {
-		t.Fatalf("unexpected file contents\nwant: %q\ngot:  %q", want, got)
+	lines := strings.Split(strings.TrimSpace(got), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("expected two lines, got %q", got)
 	}
+	if lines[0] != "- [ ] existing" {
+		t.Fatalf("expected first line preserved, got %q", lines[0])
+	}
+	assertTaskLineFormat(t, lines[1]+"\n", "demo", "second")
 }
 
 func TestReadChecklistLinesReturnsInOrder(t *testing.T) {
@@ -77,4 +93,16 @@ func readFile(t *testing.T, path string) string {
 
 func todayISO() string {
 	return time.Now().Format("2006-01-02")
+}
+
+func assertTaskLineFormat(t *testing.T, line, prefix, text string) {
+	t.Helper()
+	pattern := `^\- \[ \] ➕` + regexp.QuoteMeta(todayISO()) + ` \[` + regexp.QuoteMeta(prefix) + `\-[0-9a-z]{3,8}\] ` + regexp.QuoteMeta(text) + `\n$`
+	ok, err := regexp.MatchString(pattern, line)
+	if err != nil {
+		t.Fatalf("regexp error: %v", err)
+	}
+	if !ok {
+		t.Fatalf("line did not match expected format.\nline: %q\npattern: %q", line, pattern)
+	}
 }
