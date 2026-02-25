@@ -36,11 +36,12 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 
 func helpText() string {
 	return `TaskGraph
-●─────●
-│ \ / │
-●──●──●
- \ │ /
-  ●
+  _____         _     ____                   _     
+ |_   _|_ _ ___| | __/ ___|_ __ __ _ _ __  | |__  
+   | |/ _` + "`" + ` / __| |/ / |  _| '__/ _` + "`" + ` | '_ \ | '_ \ 
+   | | (_| \__ \   <| |_| | | | (_| | |_) || | | |
+   |_|\__,_|___/_|\_\\____|_|  \__,_| .__/ |_| |_|
+                                     |_|           
 
 Local-first, AI-friendly task graph CLI.
 

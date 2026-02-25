@@ -27,8 +27,8 @@ func TestHelpFlagsPrintHelp(t *testing.T) {
 		if !strings.Contains(stdout, "COMMANDS") || !strings.Contains(stdout, "tg add") {
 			t.Fatalf("expected help output for %q, got %q", arg, stdout)
 		}
-		if !strings.Contains(stdout, "TaskGraph") || !strings.Contains(stdout, "●") {
-			t.Fatalf("expected graph-style banner for %q, got %q", arg, stdout)
+		if !strings.Contains(stdout, "TaskGraph") {
+			t.Fatalf("expected help header for %q, got %q", arg, stdout)
 		}
 	}
 }
