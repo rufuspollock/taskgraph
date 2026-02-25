@@ -71,7 +71,7 @@ func ensureFile(path string) error {
 func ensureConfig(path string, rootDir string) error {
 	prefix := deriveDefaultPrefix(rootDir)
 	if !exists(path) {
-		content := fmt.Sprintf("prefix: %s\n", prefix)
+		content := fmt.Sprintf("issue-prefix: %s\n", prefix)
 		return os.WriteFile(path, []byte(content), 0o644)
 	}
 
@@ -83,7 +83,7 @@ func ensureConfig(path string, rootDir string) error {
 	if p := parsePrefix(string(b)); p != "" {
 		return nil
 	}
-	content := fmt.Sprintf("prefix: %s\n", prefix)
+	content := fmt.Sprintf("issue-prefix: %s\n", prefix)
 	return os.WriteFile(path, []byte(content), 0o644)
 }
 
@@ -112,6 +112,10 @@ func ReadPrefix(rootDir string) (string, error) {
 func parsePrefix(config string) string {
 	for _, line := range strings.Split(config, "\n") {
 		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "issue-prefix:") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "issue-prefix:"))
+		}
+		// Backward compatibility for older tg configs.
 		if strings.HasPrefix(line, "prefix:") {
 			return strings.TrimSpace(strings.TrimPrefix(line, "prefix:"))
 		}

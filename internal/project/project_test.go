@@ -105,7 +105,7 @@ func TestNormalizePrefix(t *testing.T) {
 func TestReadPrefixFromConfig(t *testing.T) {
 	root := t.TempDir()
 	mustMkdirAll(t, filepath.Join(root, ".taskgraph"))
-	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "config.yml"), []byte("prefix: demo\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "config.yml"), []byte("issue-prefix: demo\n"), 0o644); err != nil {
 		t.Fatalf("write config failed: %v", err)
 	}
 	got, err := ReadPrefix(root)
@@ -114,6 +114,21 @@ func TestReadPrefixFromConfig(t *testing.T) {
 	}
 	if got != "demo" {
 		t.Fatalf("expected demo prefix, got %q", got)
+	}
+}
+
+func TestReadPrefixBackwardCompatibleWithOldKey(t *testing.T) {
+	root := t.TempDir()
+	mustMkdirAll(t, filepath.Join(root, ".taskgraph"))
+	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "config.yml"), []byte("prefix: old\n"), 0o644); err != nil {
+		t.Fatalf("write config failed: %v", err)
+	}
+	got, err := ReadPrefix(root)
+	if err != nil {
+		t.Fatalf("ReadPrefix returned err: %v", err)
+	}
+	if got != "old" {
+		t.Fatalf("expected old prefix, got %q", got)
 	}
 }
 
