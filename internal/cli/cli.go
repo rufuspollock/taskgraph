@@ -54,7 +54,7 @@ USAGE
 
 COMMANDS
   init              Initialize .taskgraph in current directory
-  add <text>        Add a task to .taskgraph/tasks.md
+  add <text>        Add a task to .taskgraph/issues.md
   create <text>     Alias for add
   list              Print checklist tasks
   index             Build SQLite index from markdown files
@@ -69,7 +69,7 @@ EXAMPLES
 
 NOTES
   - tg add auto-initializes .taskgraph if missing
-  - tasks are stored in .taskgraph/tasks.md
+  - tasks are stored in .taskgraph/issues.md
   - index DB is stored in .taskgraph/taskgraph.db
 `
 }
@@ -113,7 +113,7 @@ func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
 	}
 
 	taskText := strings.TrimSpace(args[1])
-	taskFile := filepath.Join(root, ".taskgraph", "tasks.md")
+	taskFile := filepath.Join(root, ".taskgraph", "issues.md")
 	prefix, err := project.ReadPrefix(root)
 	if err != nil {
 		return err
@@ -139,7 +139,7 @@ func runList(stdout io.Writer, stderr io.Writer) error {
 		return errors.New("not initialized")
 	}
 
-	lines, err := tasks.ReadChecklistLines(filepath.Join(root, ".taskgraph", "tasks.md"))
+	lines, err := tasks.ReadChecklistLines(filepath.Join(root, ".taskgraph", "issues.md"))
 	if err != nil {
 		return err
 	}

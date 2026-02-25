@@ -99,7 +99,7 @@ func TestInitAtCreatesFilesAndIsIdempotent(t *testing.T) {
 	}
 
 	assertExists(t, filepath.Join(root, ".taskgraph", "config.yml"))
-	assertExists(t, filepath.Join(root, ".taskgraph", "tasks.md"))
+	assertExists(t, filepath.Join(root, ".taskgraph", "issues.md"))
 	prefix, err := ReadPrefix(root)
 	if err != nil {
 		t.Fatalf("ReadPrefix returned err: %v", err)

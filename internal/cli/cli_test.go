@@ -60,7 +60,7 @@ func TestInitCreatesTaskgraphFiles(t *testing.T) {
 		t.Fatalf("expected init output, got %q", stdout)
 	}
 	assertExists(t, filepath.Join(dir, ".taskgraph", "config.yml"))
-	assertExists(t, filepath.Join(dir, ".taskgraph", "tasks.md"))
+	assertExists(t, filepath.Join(dir, ".taskgraph", "issues.md"))
 }
 
 func TestAddAutoInitsWhenMissing(t *testing.T) {
@@ -78,10 +78,10 @@ func TestAddAutoInitsWhenMissing(t *testing.T) {
 		t.Fatalf("expected add confirmation, got %q", stdout)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "tasks.md"))
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
 	prefix := expectedPrefixForDir(dir)
 	if !matchesTaskLine(content, prefix, "first task") {
-		t.Fatalf("unexpected tasks.md content: %q", content)
+		t.Fatalf("unexpected issues.md content: %q", content)
 	}
 }
 
@@ -98,7 +98,7 @@ func TestAddUsesNearestAncestorTaskgraph(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "config.yml"), []byte("prefix: root\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "tasks.md"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "issues.md"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -116,9 +116,9 @@ func TestAddUsesNearestAncestorTaskgraph(t *testing.T) {
 		t.Fatalf("did not expect init output when ancestor exists: %q", stdout)
 	}
 
-	content := readFile(t, filepath.Join(root, ".taskgraph", "tasks.md"))
+	content := readFile(t, filepath.Join(root, ".taskgraph", "issues.md"))
 	if !matchesTaskLine(content, "root", "from nested") {
-		t.Fatalf("unexpected root tasks.md content: %q", content)
+		t.Fatalf("unexpected root issues.md content: %q", content)
 	}
 }
 
@@ -131,10 +131,10 @@ func TestCreateIsAliasForAdd(t *testing.T) {
 		t.Fatalf("create returned err: %v stderr=%q", err, stderr)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "tasks.md"))
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
 	prefix := expectedPrefixForDir(dir)
 	if !matchesTaskLine(content, prefix, "alias task") {
-		t.Fatalf("unexpected tasks.md content: %q", content)
+		t.Fatalf("unexpected issues.md content: %q", content)
 	}
 }
 
@@ -143,7 +143,7 @@ func TestListPrintsRawChecklistLines(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "tasks.md"), "- [ ] a\n- [x] done\n")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] a\n- [x] done\n")
 
 	stdout, stderr, err := run([]string{"list"})
 	if err != nil {
@@ -200,7 +200,7 @@ func TestAddUsesTGCWDOverride(t *testing.T) {
 		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
 	}
 
-	content := readFile(t, filepath.Join(targetDir, ".taskgraph", "tasks.md"))
+	content := readFile(t, filepath.Join(targetDir, ".taskgraph", "issues.md"))
 	if !strings.Contains(content, "from override") {
 		t.Fatalf("expected task in TG_CWD directory, got %q", content)
 	}

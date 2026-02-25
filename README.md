@@ -64,7 +64,7 @@ tg list
 Notes:
 
 - `tg add` auto-initializes `.taskgraph/` in the current directory if none exists in parent directories.
-- Tasks are stored as checklist lines in `.taskgraph/tasks.md`.
+- Tasks are stored as checklist lines in `.taskgraph/issues.md`.
 
 ---
 

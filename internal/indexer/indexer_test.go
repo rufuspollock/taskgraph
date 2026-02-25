@@ -9,7 +9,7 @@ import (
 func TestBuildNodesScansMarkdownAndParsesHierarchy(t *testing.T) {
 	root := t.TempDir()
 	mustMkdirAll(t, filepath.Join(root, ".taskgraph"))
-	mustWrite(t, filepath.Join(root, ".taskgraph", "tasks.md"), "- [ ] Captured task\n")
+	mustWrite(t, filepath.Join(root, ".taskgraph", "issues.md"), "- [ ] Captured task\n")
 	mustWrite(t, filepath.Join(root, "notes.md"), "# Project\n\n## Build\n- [ ] Ship\n- [x] Done\n")
 	mustMkdirAll(t, filepath.Join(root, ".hidden"))
 	mustWrite(t, filepath.Join(root, ".hidden", "ignored.md"), "- [ ] Ignore hidden\n")
@@ -26,7 +26,7 @@ func TestBuildNodesScansMarkdownAndParsesHierarchy(t *testing.T) {
 
 	// Included sources.
 	assertHasNodePath(t, nodes, "notes.md")
-	assertHasNodePath(t, nodes, ".taskgraph/tasks.md")
+	assertHasNodePath(t, nodes, ".taskgraph/issues.md")
 
 	// Excluded paths.
 	assertNoNodePath(t, nodes, ".hidden/ignored.md")
