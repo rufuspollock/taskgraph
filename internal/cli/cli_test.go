@@ -244,6 +244,52 @@ func TestAddUpdatesSQLiteIndex(t *testing.T) {
 	}
 }
 
+func TestMigrateBeadsImportsIntoIssuesMarkdown(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustMkdirAll(t, filepath.Join(dir, ".beads"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] existing\n")
+	mustWrite(t, filepath.Join(dir, ".beads", "issues.jsonl"), strings.Join([]string{
+		`{"id":"pl-1","title":"Open item","status":"open"}`,
+		`{"id":"pl-2","title":"Closed item","status":"closed"}`,
+		`{"id":"pl-3","title":"Deleted item","status":"tombstone"}`,
+	}, "\n")+"\n")
+
+	stdout, stderr, err := run([]string{"migrate-beads"})
+	if err != nil {
+		t.Fatalf("migrate-beads returned err: %v stderr=%q", err, stderr)
+	}
+	if !strings.Contains(stdout, "Imported 2 issues") {
+		t.Fatalf("expected import summary, got %q", stdout)
+	}
+
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	if !strings.Contains(content, "- [ ] [beads:pl-1] Open item\n") {
+		t.Fatalf("missing open import line: %q", content)
+	}
+	if !strings.Contains(content, "- [x] [beads:pl-2] Closed item\n") {
+		t.Fatalf("missing closed import line: %q", content)
+	}
+	if strings.Contains(content, "pl-3") {
+		t.Fatalf("unexpected tombstone import: %q", content)
+	}
+}
+
+func TestMigrateBeadsRequiresLocalBeadsAndTaskgraphDirs(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"migrate-beads"})
+	if err == nil {
+		t.Fatalf("expected error for missing directories")
+	}
+	if !strings.Contains(stderr, "expected .beads and .taskgraph in current directory") {
+		t.Fatalf("expected clear missing-directory message, got %q", stderr)
+	}
+}
+
 func run(args []string) (string, string, error) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer

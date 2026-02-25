@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"taskgraph/internal/indexer"
+	"taskgraph/internal/migrate"
 	"taskgraph/internal/project"
 	"taskgraph/internal/tasks"
 )
@@ -32,6 +33,8 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runList(stdout, stderr)
 	case "index":
 		return runIndex(stdout, stderr)
+	case "migrate-beads":
+		return runMigrateBeads(stdout, stderr)
 	default:
 		return fmt.Errorf("unknown command: %s. Run 'tg --help'", args[0])
 	}
@@ -58,6 +61,7 @@ COMMANDS
   create <text>     Alias for add
   list              Print checklist tasks
   index             Build SQLite index from markdown files
+  migrate-beads     Import .beads/issues.jsonl into .taskgraph/issues.md
   help              Show this help
 
 EXAMPLES
@@ -66,6 +70,7 @@ EXAMPLES
   tg create "book dentist"
   tg list
   tg index
+  tg migrate-beads
 
 NOTES
   - tg add auto-initializes .taskgraph if missing
@@ -180,6 +185,28 @@ func runIndex(stdout io.Writer, stderr io.Writer) error {
 		fileCount,
 		nodeCount,
 		filepath.Join(root, ".taskgraph", "taskgraph.db"),
+	)
+	return nil
+}
+
+func runMigrateBeads(stdout io.Writer, stderr io.Writer) error {
+	cwd, err := effectiveCWD()
+	if err != nil {
+		return err
+	}
+
+	summary, err := migrate.ImportBeadsIssues(cwd)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return err
+	}
+
+	fmt.Fprintf(
+		stdout,
+		"Imported %d issues (%d tombstones skipped, %d invalid skipped)\n",
+		summary.Imported,
+		summary.SkippedTombstone,
+		summary.SkippedInvalid,
 	)
 	return nil
 }

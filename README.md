@@ -61,10 +61,18 @@ List tasks:
 tg list
 ```
 
+Migrate from Beads JSONL:
+
+```bash
+tg migrate-beads
+```
+
 Notes:
 
 - `tg add` auto-initializes `.taskgraph/` in the current directory if none exists in parent directories.
 - Tasks are stored as checklist lines in `.taskgraph/issues.md`.
+- `tg migrate-beads` expects both `./.beads/` and `./.taskgraph/` in the current directory.
+- `tg migrate-beads` imports from `./.beads/issues.jsonl` into `./.taskgraph/issues.md`.
 
 ---
 
