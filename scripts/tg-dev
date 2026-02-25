@@ -11,6 +11,7 @@ done
 
 SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CALLER_CWD="$(pwd)"
 
 cd "$REPO_ROOT"
-exec go run ./cmd/tg "$@"
+exec env TG_CWD="$CALLER_CWD" go run ./cmd/tg "$@"

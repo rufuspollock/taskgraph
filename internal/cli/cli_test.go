@@ -167,6 +167,45 @@ func TestAddRequiresTaskText(t *testing.T) {
 	}
 }
 
+func TestIndexBuildsTaskgraphDatabase(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "project.md"), "# Project\n\n- [ ] Ship v1\n")
+
+	stdout, stderr, err := run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+	if !strings.Contains(stdout, "Indexed") {
+		t.Fatalf("expected index summary, got %q", stdout)
+	}
+	assertExists(t, filepath.Join(dir, ".taskgraph", "taskgraph.db"))
+}
+
+func TestAddUsesTGCWDOverride(t *testing.T) {
+	targetDir := t.TempDir()
+	otherDir := t.TempDir()
+
+	chdir(t, otherDir)
+	t.Setenv("TG_CWD", targetDir)
+
+	_, stderr, err := run([]string{"add", "from override"})
+	if err != nil {
+		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
+	}
+
+	content := readFile(t, filepath.Join(targetDir, ".taskgraph", "tasks.md"))
+	if !strings.Contains(content, "from override") {
+		t.Fatalf("expected task in TG_CWD directory, got %q", content)
+	}
+}
+
 func run(args []string) (string, string, error) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer

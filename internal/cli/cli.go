@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"taskgraph/internal/indexer"
 	"taskgraph/internal/project"
 	"taskgraph/internal/tasks"
 )
@@ -29,6 +30,8 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runAdd(args, stdout, stderr)
 	case "list":
 		return runList(stdout, stderr)
+	case "index":
+		return runIndex(stdout, stderr)
 	default:
 		return fmt.Errorf("unknown command: %s. Run 'tg --help'", args[0])
 	}
@@ -54,6 +57,7 @@ COMMANDS
   add <text>        Add a task to .taskgraph/tasks.md
   create <text>     Alias for add
   list              Print checklist tasks
+  index             Build SQLite index from markdown files
   help              Show this help
 
 EXAMPLES
@@ -61,15 +65,17 @@ EXAMPLES
   tg add "buy milk"
   tg create "book dentist"
   tg list
+  tg index
 
 NOTES
   - tg add auto-initializes .taskgraph if missing
   - tasks are stored in .taskgraph/tasks.md
+  - index DB is stored in .taskgraph/taskgraph.db
 `
 }
 
 func runInit(stdout io.Writer) error {
-	cwd, err := os.Getwd()
+	cwd, err := effectiveCWD()
 	if err != nil {
 		return err
 	}
@@ -87,7 +93,7 @@ func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
 		return errors.New("missing task text")
 	}
 
-	cwd, err := os.Getwd()
+	cwd, err := effectiveCWD()
 	if err != nil {
 		return err
 	}
@@ -120,7 +126,7 @@ func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
 }
 
 func runList(stdout io.Writer, stderr io.Writer) error {
-	cwd, err := os.Getwd()
+	cwd, err := effectiveCWD()
 	if err != nil {
 		return err
 	}
@@ -141,4 +147,45 @@ func runList(stdout io.Writer, stderr io.Writer) error {
 		fmt.Fprintln(stdout, line)
 	}
 	return nil
+}
+
+func runIndex(stdout io.Writer, stderr io.Writer) error {
+	cwd, err := effectiveCWD()
+	if err != nil {
+		return err
+	}
+	root, found, err := project.FindTaskgraphRoot(cwd)
+	if err != nil {
+		return err
+	}
+	if !found {
+		fmt.Fprintln(stderr, "No .taskgraph found. Run `tg init` or `tg add \"task text\"`.")
+		return errors.New("not initialized")
+	}
+
+	nodes, err := indexer.BuildNodes(root)
+	if err != nil {
+		return err
+	}
+
+	dbPath := filepath.Join(root, ".taskgraph", "taskgraph.db")
+	if err := indexer.RebuildSQLite(dbPath, nodes); err != nil {
+		return err
+	}
+
+	fmt.Fprintf(
+		stdout,
+		"Indexed %d files, %d nodes into %s\n",
+		indexer.FileNodeCount(nodes),
+		len(nodes),
+		dbPath,
+	)
+	return nil
+}
+
+func effectiveCWD() (string, error) {
+	if v := strings.TrimSpace(os.Getenv("TG_CWD")); v != "" {
+		return v, nil
+	}
+	return os.Getwd()
 }
