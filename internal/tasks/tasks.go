@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 // AppendTask appends one markdown checklist line to tasksFile.
@@ -23,7 +24,7 @@ func AppendTask(tasksFile, text string) error {
 		return err
 	}
 
-	line := fmt.Sprintf("- [ ] %s\n", clean)
+	line := fmt.Sprintf("- [ ] ➕%s %s\n", time.Now().Format("2006-01-02"), clean)
 	if len(existing) > 0 && existing[len(existing)-1] != '\n' {
 		line = "\n" + line
 	}

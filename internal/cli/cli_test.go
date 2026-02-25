@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNoArgsPrintsHelp(t *testing.T) {
@@ -77,7 +78,7 @@ func TestAddAutoInitsWhenMissing(t *testing.T) {
 	}
 
 	content := readFile(t, filepath.Join(dir, ".taskgraph", "tasks.md"))
-	if content != "- [ ] first task\n" {
+	if content != expectedTaskLine("first task") {
 		t.Fatalf("unexpected tasks.md content: %q", content)
 	}
 }
@@ -114,7 +115,7 @@ func TestAddUsesNearestAncestorTaskgraph(t *testing.T) {
 	}
 
 	content := readFile(t, filepath.Join(root, ".taskgraph", "tasks.md"))
-	if content != "- [ ] from nested\n" {
+	if content != expectedTaskLine("from nested") {
 		t.Fatalf("unexpected root tasks.md content: %q", content)
 	}
 }
@@ -129,7 +130,7 @@ func TestCreateIsAliasForAdd(t *testing.T) {
 	}
 
 	content := readFile(t, filepath.Join(dir, ".taskgraph", "tasks.md"))
-	if content != "- [ ] alias task\n" {
+	if content != expectedTaskLine("alias task") {
 		t.Fatalf("unexpected tasks.md content: %q", content)
 	}
 }
@@ -212,4 +213,8 @@ func mustWrite(t *testing.T, path, content string) {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write failed: %v", err)
 	}
+}
+
+func expectedTaskLine(text string) string {
+	return "- [ ] ➕" + time.Now().Format("2006-01-02") + " " + text + "\n"
 }

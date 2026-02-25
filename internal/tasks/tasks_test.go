@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestAppendTaskWritesChecklistLine(t *testing.T) {
@@ -15,7 +16,7 @@ func TestAppendTaskWritesChecklistLine(t *testing.T) {
 	}
 
 	got := readFile(t, path)
-	want := "- [ ] first task\n"
+	want := "- [ ] ➕" + todayISO() + " first task\n"
 	if got != want {
 		t.Fatalf("unexpected file contents\nwant: %q\ngot:  %q", want, got)
 	}
@@ -31,7 +32,7 @@ func TestAppendTaskPreservesExistingLines(t *testing.T) {
 	}
 
 	got := readFile(t, path)
-	want := "- [ ] existing\n- [ ] second\n"
+	want := "- [ ] existing\n- [ ] ➕" + todayISO() + " second\n"
 	if got != want {
 		t.Fatalf("unexpected file contents\nwant: %q\ngot:  %q", want, got)
 	}
@@ -72,4 +73,8 @@ func readFile(t *testing.T, path string) string {
 		t.Fatalf("read file failed: %v", err)
 	}
 	return string(b)
+}
+
+func todayISO() string {
+	return time.Now().Format("2006-01-02")
 }
