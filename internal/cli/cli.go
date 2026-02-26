@@ -29,8 +29,10 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runInit(stdout)
 	case "add", "create":
 		return runAdd(args, stdout, stderr)
+	case "inbox":
+		return runInbox(stdout, stderr)
 	case "list":
-		return runList(stdout, stderr)
+		return runList(args, stdout, stderr)
 	case "index":
 		return runIndex(stdout, stderr)
 	case "migrate-beads":
@@ -59,7 +61,8 @@ COMMANDS
   init              Initialize .taskgraph in current directory
   add <text>        Add a task to .taskgraph/issues.md
   create <text>     Alias for add
-  list              Print checklist tasks
+  inbox             Print inbox checklist from .taskgraph/issues.md
+  list [--all]      Print indexed checklist tasks from SQLite
   index             Build SQLite index from markdown files
   migrate-beads     Import .beads/issues.jsonl into .taskgraph/issues.md
   help              Show this help
@@ -68,13 +71,14 @@ EXAMPLES
   tg init
   tg add "buy milk"
   tg create "book dentist"
+  tg inbox
   tg list
   tg index
   tg migrate-beads
 
 NOTES
   - tg add auto-initializes .taskgraph if missing
-  - tasks are stored in .taskgraph/issues.md
+  - inbox is stored in .taskgraph/issues.md
   - index DB is stored in .taskgraph/taskgraph.db
 `
 }
@@ -136,7 +140,7 @@ func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
 	return nil
 }
 
-func runList(stdout io.Writer, stderr io.Writer) error {
+func runInbox(stdout io.Writer, stderr io.Writer) error {
 	cwd, err := effectiveCWD()
 	if err != nil {
 		return err
@@ -156,6 +160,42 @@ func runList(stdout io.Writer, stderr io.Writer) error {
 	}
 	for _, line := range lines {
 		fmt.Fprintln(stdout, line)
+	}
+	return nil
+}
+
+func runList(args []string, stdout io.Writer, stderr io.Writer) error {
+	includeClosed, err := parseListArgs(args[1:])
+	if err != nil {
+		fmt.Fprintln(stderr, err.Error())
+		return err
+	}
+
+	cwd, err := effectiveCWD()
+	if err != nil {
+		return err
+	}
+	root, found, err := project.FindTaskgraphRoot(cwd)
+	if err != nil {
+		return err
+	}
+	if !found {
+		fmt.Fprintln(stderr, "No .taskgraph found. Run `tg init` or `tg add \"task text\"`.")
+		return errors.New("not initialized")
+	}
+
+	dbPath := filepath.Join(root, ".taskgraph", "taskgraph.db")
+	nodes, err := indexer.ReadChecklistNodes(dbPath, includeClosed)
+	if err != nil {
+		return err
+	}
+
+	for _, n := range nodes {
+		mark := " "
+		if n.State == "closed" {
+			mark = "x"
+		}
+		fmt.Fprintf(stdout, "- [%s] %s (%s:%d)\n", mark, n.Title, n.Path, n.Line)
 	}
 	return nil
 }
@@ -228,4 +268,17 @@ func effectiveCWD() (string, error) {
 		return v, nil
 	}
 	return os.Getwd()
+}
+
+func parseListArgs(args []string) (bool, error) {
+	includeClosed := false
+	for _, arg := range args {
+		switch arg {
+		case "--all":
+			includeClosed = true
+		default:
+			return false, fmt.Errorf("usage: tg list [--all]")
+		}
+	}
+	return includeClosed, nil
 }

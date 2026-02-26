@@ -147,19 +147,63 @@ func TestCreateIsAliasForAdd(t *testing.T) {
 	}
 }
 
-func TestListPrintsRawChecklistLines(t *testing.T) {
+func TestInboxPrintsRawChecklistLines(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] a\n- [x] done\n")
 
+	stdout, stderr, err := run([]string{"inbox"})
+	if err != nil {
+		t.Fatalf("inbox returned err: %v stderr=%q", err, stderr)
+	}
+	if stdout != "- [ ] a\n- [x] done\n" {
+		t.Fatalf("unexpected inbox output: %q", stdout)
+	}
+}
+
+func TestListReadsChecklistFromDatabase(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "alpha.md"), "# Alpha\n\n- [ ] Alpha task\n")
+	mustWrite(t, filepath.Join(dir, "beta.md"), "# Beta\n\n- [x] Beta done\n")
+	now := time.Now()
+	mustChtimes(t, filepath.Join(dir, "alpha.md"), now.Add(-2*time.Hour))
+	mustChtimes(t, filepath.Join(dir, "beta.md"), now.Add(-1*time.Hour))
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
 	stdout, stderr, err := run([]string{"list"})
 	if err != nil {
 		t.Fatalf("list returned err: %v stderr=%q", err, stderr)
 	}
-	if stdout != "- [ ] a\n- [x] done\n" {
-		t.Fatalf("unexpected list output: %q", stdout)
+	if !strings.Contains(stdout, "[ ] Alpha task") {
+		t.Fatalf("expected open task in list output, got %q", stdout)
+	}
+	if strings.Contains(stdout, "Beta done") {
+		t.Fatalf("did not expect closed task in default list output, got %q", stdout)
+	}
+
+	stdoutAll, stderr, err := run([]string{"list", "--all"})
+	if err != nil {
+		t.Fatalf("list --all returned err: %v stderr=%q", err, stderr)
+	}
+	if !strings.Contains(stdoutAll, "[x] Beta done") {
+		t.Fatalf("expected closed task in list --all output, got %q", stdoutAll)
+	}
+
+	if strings.Index(stdoutAll, "Beta done") > strings.Index(stdoutAll, "Alpha task") {
+		t.Fatalf("expected newest file tasks first, got %q", stdoutAll)
 	}
 }
 
@@ -338,6 +382,13 @@ func mustWrite(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write failed: %v", err)
+	}
+}
+
+func mustChtimes(t *testing.T, path string, mod time.Time) {
+	t.Helper()
+	if err := os.Chtimes(path, mod, mod); err != nil {
+		t.Fatalf("chtimes failed: %v", err)
 	}
 }
 

@@ -19,16 +19,17 @@ var (
 
 // Node is one indexed markdown element.
 type Node struct {
-	ID         string
-	Kind       string
-	Title      string
-	State      string
-	Path       string
-	Line       int
-	ParentID   string
-	Context    string
-	SearchText string
-	Source     string
+	ID              string
+	Kind            string
+	Title           string
+	State           string
+	Path            string
+	Line            int
+	ParentID        string
+	Context         string
+	SearchText      string
+	Source          string
+	SourceMTimeUnix int64
 }
 
 // BuildNodes scans the root directory for markdown files and returns indexed nodes.
@@ -64,7 +65,11 @@ func BuildNodes(root string) ([]Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		fileNodes := indexMarkdown(string(content), rel, source)
+		info, err := os.Stat(absPath)
+		if err != nil {
+			return nil, err
+		}
+		fileNodes := indexMarkdown(string(content), rel, source, info.ModTime().Unix())
 		nodes = append(nodes, fileNodes...)
 	}
 
@@ -117,20 +122,21 @@ func appendUnique(paths []string, p string) []string {
 	return append(paths, p)
 }
 
-func indexMarkdown(content, relPath, source string) []Node {
+func indexMarkdown(content, relPath, source string, sourceMTimeUnix int64) []Node {
 	fileTitle := strings.TrimSuffix(filepath.Base(relPath), filepath.Ext(relPath))
 	fileID := buildNodeID(relPath, nil, 0, "file")
 	nodes := []Node{{
-		ID:         fileID,
-		Kind:       "file",
-		Title:      fileTitle,
-		State:      "unknown",
-		Path:       relPath,
-		Line:       0,
-		ParentID:   "",
-		Context:    fileTitle,
-		SearchText: normalizeSearch(fileTitle),
-		Source:     source,
+		ID:              fileID,
+		Kind:            "file",
+		Title:           fileTitle,
+		State:           "unknown",
+		Path:            relPath,
+		Line:            0,
+		ParentID:        "",
+		Context:         fileTitle,
+		SearchText:      normalizeSearch(fileTitle),
+		Source:          source,
+		SourceMTimeUnix: sourceMTimeUnix,
 	}}
 
 	type headingEntry struct {
@@ -161,16 +167,17 @@ func indexMarkdown(content, relPath, source string) []Node {
 			stack = append(stack, headingEntry{level: level, title: title, id: id})
 			context := buildContext(fileTitle, pathBits)
 			nodes = append(nodes, Node{
-				ID:         id,
-				Kind:       "heading",
-				Title:      title,
-				State:      "unknown",
-				Path:       relPath,
-				Line:       lineNo,
-				ParentID:   parentID,
-				Context:    context,
-				SearchText: normalizeSearch(context + " " + title),
-				Source:     source,
+				ID:              id,
+				Kind:            "heading",
+				Title:           title,
+				State:           "unknown",
+				Path:            relPath,
+				Line:            lineNo,
+				ParentID:        parentID,
+				Context:         context,
+				SearchText:      normalizeSearch(context + " " + title),
+				Source:          source,
+				SourceMTimeUnix: sourceMTimeUnix,
 			})
 			continue
 		}
@@ -192,16 +199,17 @@ func indexMarkdown(content, relPath, source string) []Node {
 			id := buildNodeID(relPath, pathBits, lineNo, "checklist")
 			context := buildContext(fileTitle, pathBits)
 			nodes = append(nodes, Node{
-				ID:         id,
-				Kind:       "checklist",
-				Title:      title,
-				State:      state,
-				Path:       relPath,
-				Line:       lineNo,
-				ParentID:   parentID,
-				Context:    context,
-				SearchText: normalizeSearch(context + " " + title),
-				Source:     source,
+				ID:              id,
+				Kind:            "checklist",
+				Title:           title,
+				State:           state,
+				Path:            relPath,
+				Line:            lineNo,
+				ParentID:        parentID,
+				Context:         context,
+				SearchText:      normalizeSearch(context + " " + title),
+				Source:          source,
+				SourceMTimeUnix: sourceMTimeUnix,
 			})
 		}
 	}
