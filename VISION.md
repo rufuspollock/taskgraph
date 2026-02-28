@@ -12,11 +12,31 @@ Build Task Graph as a practical, daily-use system that helps decide what to do n
 
 ### Jobs To Be Done
 
-- `tg next` Help decide what to do next each day, quickly and with low overhead (Surface useful "next" actions quickly from the task graph)
-- `tg create` (alias: `tg add`, `tg capture`. Capture tasks and ideas instantly in a GTD-style flow
-- `tg graph` Support hierarchical tasks (projects, subprojects, tasks)
-- `tg inbox`: do GTD conversion of captured items (in "inbox") to clarify to backlog with increasing automation over time
-- `tg list` or `tg graph`: Serve as a shared operational substrate for both human use and AI-assisted planning
+1. `tg create` (alias: `tg add`, future alias `tg capture`)
+Capture tasks and ideas instantly in a GTD-style flow.
+Status: `Implemented` (`tg add`/`tg create` append to `.taskgraph/issues.md` and refresh index DB).
+
+2. `tg inbox`
+See and process captured inbox items from `.taskgraph/issues.md`.
+Status: `Implemented` (raw inbox checklist view).
+
+3. `tg list`
+See task graph checklist items across indexed markdown in one queryable view.
+Status: `Implemented (v1)` (SQLite-backed checklist listing, open-only default, `--all` to include closed).
+
+4. `tg graph`
+Support richer hierarchical/relationship-oriented task views (projects, subprojects, tasks).
+Status: `Partial` (hierarchy is indexed in DB; dedicated graph UX/command not implemented).
+
+5. `tg next`
+Help decide what to do next quickly with low overhead.
+Status: `Not implemented` (planned to build on DB-backed list + ranking heuristics).
+
+### JTBD Review Loop
+
+- Keep this section as the source of truth for command intent and support level.
+- When command behavior changes, update JTBD status in the same PR/commit.
+- Prefer explicit status labels: `Not implemented`, `Partial`, `Implemented (vN)`.
 
 ### Key Principle: AI Uses The Tool
 

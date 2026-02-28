@@ -55,10 +55,17 @@ tg add "buy milk"
 tg create "book dentist"
 ```
 
-List tasks:
+View inbox captures:
+
+```bash
+tg inbox
+```
+
+List indexed tasks across markdown (DB-backed):
 
 ```bash
 tg list
+tg list --all
 ```
 
 Migrate from Beads JSONL:
@@ -70,9 +77,18 @@ tg migrate-beads
 Notes:
 
 - `tg add` auto-initializes `.taskgraph/` in the current directory if none exists in parent directories.
-- Tasks are stored as checklist lines in `.taskgraph/issues.md`.
+- Inbox tasks are stored as checklist lines in `.taskgraph/issues.md`.
+- Indexed task graph is stored in `.taskgraph/taskgraph.db`.
 - `tg migrate-beads` expects both `./.beads/` and `./.taskgraph/` in the current directory.
 - `tg migrate-beads` imports from `./.beads/issues.jsonl` into `./.taskgraph/issues.md`.
+
+## Jobs To Be Done (Current Status)
+
+1. Capture quickly: `tg add` / `tg create` - Implemented
+2. Process inbox: `tg inbox` - Implemented
+3. View indexed task graph: `tg list` - Implemented (v1 checklist view)
+4. Graph-native planning: `tg graph` - Partial (data indexed, UX not yet shipped)
+5. Suggest best next action: `tg next` - Not yet implemented
 
 ---
 
