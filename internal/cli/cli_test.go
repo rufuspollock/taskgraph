@@ -147,7 +147,7 @@ func TestCreateIsAliasForAdd(t *testing.T) {
 	}
 }
 
-func TestInboxPrintsRawChecklistLines(t *testing.T) {
+func TestInboxPrintsOnlyOpenChecklistLinesByDefault(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
@@ -158,8 +158,24 @@ func TestInboxPrintsRawChecklistLines(t *testing.T) {
 	if err != nil {
 		t.Fatalf("inbox returned err: %v stderr=%q", err, stderr)
 	}
-	if stdout != "- [ ] a\n- [x] done\n" {
+	if stdout != "- [ ] a\n" {
 		t.Fatalf("unexpected inbox output: %q", stdout)
+	}
+}
+
+func TestInboxAllPrintsOpenAndClosedChecklistLines(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] a\n- [x] done\n")
+
+	stdout, stderr, err := run([]string{"inbox", "--all"})
+	if err != nil {
+		t.Fatalf("inbox --all returned err: %v stderr=%q", err, stderr)
+	}
+	if stdout != "- [ ] a\n- [x] done\n" {
+		t.Fatalf("unexpected inbox --all output: %q", stdout)
 	}
 }
 

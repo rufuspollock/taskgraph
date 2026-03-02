@@ -30,7 +30,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 	case "add", "create":
 		return runAdd(args, stdout, stderr)
 	case "inbox":
-		return runInbox(stdout, stderr)
+		return runInbox(args[1:], stdout, stderr)
 	case "list":
 		return runList(args, stdout, stderr)
 	case "index":
@@ -61,7 +61,7 @@ COMMANDS
   init              Initialize .taskgraph in current directory
   add <text>        Add a task to .taskgraph/issues.md
   create <text>     Alias for add
-  inbox             Print inbox checklist from .taskgraph/issues.md
+  inbox [--all]     Print inbox checklist from .taskgraph/issues.md
   list [--all]      Print indexed checklist tasks from SQLite
   index             Build SQLite index from markdown files
   migrate-beads     Import .beads/issues.jsonl into .taskgraph/issues.md
@@ -140,7 +140,13 @@ func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
 	return nil
 }
 
-func runInbox(stdout io.Writer, stderr io.Writer) error {
+func runInbox(args []string, stdout io.Writer, stderr io.Writer) error {
+	includeClosed, err := parseInboxArgs(args)
+	if err != nil {
+		fmt.Fprintln(stderr, err.Error())
+		return err
+	}
+
 	cwd, err := effectiveCWD()
 	if err != nil {
 		return err
@@ -159,6 +165,9 @@ func runInbox(stdout io.Writer, stderr io.Writer) error {
 		return err
 	}
 	for _, line := range lines {
+		if !includeClosed && strings.HasPrefix(line, "- [x] ") {
+			continue
+		}
 		fmt.Fprintln(stdout, line)
 	}
 	return nil
@@ -278,6 +287,19 @@ func parseListArgs(args []string) (bool, error) {
 			includeClosed = true
 		default:
 			return false, fmt.Errorf("usage: tg list [--all]")
+		}
+	}
+	return includeClosed, nil
+}
+
+func parseInboxArgs(args []string) (bool, error) {
+	includeClosed := false
+	for _, arg := range args {
+		switch arg {
+		case "--all":
+			includeClosed = true
+		default:
+			return false, fmt.Errorf("usage: tg inbox [--all]")
 		}
 	}
 	return includeClosed, nil
