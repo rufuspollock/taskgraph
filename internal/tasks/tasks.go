@@ -56,6 +56,46 @@ func AppendTask(tasksFile, prefix, text string, labels []string) error {
 	return err
 }
 
+func CloseTask(tasksFile, id, reason string) error {
+	if strings.TrimSpace(tasksFile) == "" {
+		return errors.New("tasks file is required")
+	}
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return errors.New("task id is required")
+	}
+	reason = strings.TrimSpace(reason)
+	if reason == "" {
+		return errors.New("close reason is required")
+	}
+
+	content, err := os.ReadFile(tasksFile)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	needle := "[" + id + "]"
+	found := false
+	for i, line := range lines {
+		if !strings.Contains(line, needle) {
+			continue
+		}
+		found = true
+		if !strings.HasPrefix(line, "- [ ] ") {
+			return fmt.Errorf("task already closed: %s", id)
+		}
+		lines[i] = line + " **✅" + time.Now().Format("2006-01-02") + " " + reason + "**"
+		lines[i] = strings.Replace(lines[i], "- [ ] ", "- [x] ", 1)
+		break
+	}
+	if !found {
+		return fmt.Errorf("task not found: %s", id)
+	}
+
+	return os.WriteFile(tasksFile, []byte(strings.Join(lines, "\n")), 0o644)
+}
+
 func normalizePrefix(raw string) string {
 	var out []rune
 	for _, r := range strings.ToLower(raw) {

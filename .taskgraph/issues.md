@@ -20,3 +20,7 @@
 - [ ] ➕2026-02-28 [task-pyv] taskgraph website and landing page
 - [ ] ➕2026-02-28 [task-vai] Register taskgraph.dev
 - [ ] ➕2026-03-02 [task-x7g] I want to parse out time estimates which have a timer emoji next to them, and then time. I also want to pass out things like the next emoji, which means next. Basically, I have a bunch of emojis that I'm using in their meaning, which I should also pause out at some point.
+- [ ] ➕2026-03-03 [task-w2m] tg day command: when starting my day i want to quickly (<5-10m) generate a backlog of tasks for my day starting with the *deep work* and then moving to more day to day items
+- [ ] ➕2026-03-03 [task-zki] document patterns of having projects in projects folder and project being GTD project i.e. anything with multiple subtasks
+- [ ] ➕2026-03-03 [task-wbv] reflect on how we doc patterns vs implement stuff in actual tooling
+- [ ] ➕2026-03-03 [tgcl-vpf] support closing non-inbox tasks by indexed location with safe write-back semantics

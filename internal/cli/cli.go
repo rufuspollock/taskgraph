@@ -31,6 +31,8 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runAdd(args, stdout, stderr)
 	case "inbox":
 		return runInbox(args[1:], stdout, stderr)
+	case "close":
+		return runClose(args[1:], stdout, stderr)
 	case "list":
 		return runList(args, stdout, stderr)
 	case "index":
@@ -63,6 +65,8 @@ COMMANDS
   create <text>     Alias for add
   inbox [--all] [--label name]
                     Print inbox checklist from .taskgraph/issues.md
+  close <id> <reason>
+                    Close an inbox task in .taskgraph/issues.md
   list [--all] [--label name]
                     Print indexed checklist tasks from SQLite
   index             Build SQLite index from markdown files
@@ -76,6 +80,7 @@ EXAMPLES
   tg create "book dentist"
   tg inbox
   tg inbox --label home
+  tg close tg-abc "done on phone"
   tg list
   tg list --label errands
   tg index
@@ -182,6 +187,38 @@ func runInbox(args []string, stdout io.Writer, stderr io.Writer) error {
 		}
 		fmt.Fprintln(stdout, line)
 	}
+	return nil
+}
+
+func runClose(args []string, stdout io.Writer, stderr io.Writer) error {
+	id, reason, err := parseCloseArgs(args)
+	if err != nil {
+		fmt.Fprintln(stderr, err.Error())
+		return err
+	}
+
+	cwd, err := effectiveCWD()
+	if err != nil {
+		return err
+	}
+	root, found, err := project.FindTaskgraphRoot(cwd)
+	if err != nil {
+		return err
+	}
+	if !found {
+		fmt.Fprintln(stderr, "No .taskgraph found. Run `tg init` or `tg add \"task text\"`.")
+		return errors.New("not initialized")
+	}
+
+	taskFile := filepath.Join(root, ".taskgraph", "issues.md")
+	if err := tasks.CloseTask(taskFile, id, reason); err != nil {
+		fmt.Fprintln(stderr, err.Error())
+		return err
+	}
+	if _, _, err := buildAndStoreIndex(root); err != nil {
+		return err
+	}
+	fmt.Fprintf(stdout, "Closed task: %s\n", id)
 	return nil
 }
 
@@ -337,6 +374,19 @@ func parseInboxArgs(args []string) (bool, []string, error) {
 		}
 	}
 	return includeClosed, tasks.MergeLabels(labels), nil
+}
+
+func parseCloseArgs(args []string) (string, string, error) {
+	if len(args) < 2 {
+		return "", "", fmt.Errorf("usage: tg close <id> <reason>")
+	}
+
+	id := strings.TrimSpace(args[0])
+	reason := strings.TrimSpace(strings.Join(args[1:], " "))
+	if id == "" || reason == "" {
+		return "", "", fmt.Errorf("usage: tg close <id> <reason>")
+	}
+	return id, reason, nil
 }
 
 func hasAllLabels(actual, required []string) bool {

@@ -1,9 +1,9 @@
 package tasks
 
 import (
-	"reflect"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -113,6 +113,45 @@ func TestAppendTaskAppendsNormalizedLabels(t *testing.T) {
 
 	got := readFile(t, path)
 	assertTaskLineFormat(t, got, "tg", "prep venue notes #flowershow #abc")
+}
+
+func TestCloseTaskMarksInboxLineDoneWithReason(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "issues.md")
+	mustWrite(t, path, "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+
+	err := CloseTask(path, "tg-abc", "done on phone")
+	if err != nil {
+		t.Fatalf("CloseTask returned err: %v", err)
+	}
+
+	got := readFile(t, path)
+	want := "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅" + todayISO() + " done on phone**\n"
+	if got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+}
+
+func TestCloseTaskReturnsErrorForUnknownID(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "issues.md")
+	mustWrite(t, path, "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+
+	err := CloseTask(path, "tg-missing", "done on phone")
+	if err == nil {
+		t.Fatalf("expected CloseTask error for unknown ID")
+	}
+}
+
+func TestCloseTaskReturnsErrorForAlreadyClosedTask(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "issues.md")
+	mustWrite(t, path, "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅2026-03-03 done on phone**\n")
+
+	err := CloseTask(path, "tg-abc", "done on phone")
+	if err == nil {
+		t.Fatalf("expected CloseTask error for already closed task")
+	}
 }
 
 func mustWrite(t *testing.T, path string, content string) {

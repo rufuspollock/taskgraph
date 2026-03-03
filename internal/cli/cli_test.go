@@ -211,6 +211,110 @@ func TestInboxFiltersByRepeatedLabelWithANDSemantics(t *testing.T) {
 	}
 }
 
+func TestCloseUpdatesInboxTaskWithReason(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+
+	stdout, stderr, err := run([]string{"close", "tg-abc", "done on phone"})
+	if err != nil {
+		t.Fatalf("close returned err: %v stderr=%q", err, stderr)
+	}
+	if !strings.Contains(stdout, "Closed task: tg-abc") {
+		t.Fatalf("unexpected close output: %q", stdout)
+	}
+
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	want := "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅" + time.Now().Format("2006-01-02") + " done on phone**\n"
+	if content != want {
+		t.Fatalf("unexpected issues.md content: %q", content)
+	}
+}
+
+func TestCloseRequiresReason(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"close", "tg-abc"})
+	if err == nil {
+		t.Fatalf("expected error for missing close reason")
+	}
+	if !strings.Contains(stderr, "usage: tg close <id> <reason>") {
+		t.Fatalf("expected usage message, got %q", stderr)
+	}
+}
+
+func TestCloseReturnsErrorForUnknownID(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+
+	_, stderr, err := run([]string{"close", "tg-missing", "done"})
+	if err == nil {
+		t.Fatalf("expected error for unknown close id")
+	}
+	if !strings.Contains(stderr, "task not found: tg-missing") {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+}
+
+func TestCloseReturnsErrorForAlreadyClosedTask(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅2026-03-03 done**\n")
+
+	_, stderr, err := run([]string{"close", "tg-abc", "done again"})
+	if err == nil {
+		t.Fatalf("expected error for already closed task")
+	}
+	if !strings.Contains(stderr, "task already closed: tg-abc") {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+}
+
+func TestCloseUpdatesIndexState(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	_, stderr, err = run([]string{"close", "tg-abc", "done"})
+	if err != nil {
+		t.Fatalf("close returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdoutOpen, stderr, err := run([]string{"list"})
+	if err != nil {
+		t.Fatalf("list returned err: %v stderr=%q", err, stderr)
+	}
+	if strings.Contains(stdoutOpen, "call Alice #home") {
+		t.Fatalf("did not expect closed task in default list output, got %q", stdoutOpen)
+	}
+
+	stdoutAll, stderr, err := run([]string{"list", "--all"})
+	if err != nil {
+		t.Fatalf("list --all returned err: %v stderr=%q", err, stderr)
+	}
+	if !strings.Contains(stdoutAll, "[x] ➕2026-03-03 [tg-abc] call Alice #home") {
+		t.Fatalf("expected closed task in list --all output, got %q", stdoutAll)
+	}
+}
+
 func TestListReadsChecklistFromDatabase(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
