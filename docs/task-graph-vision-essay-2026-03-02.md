@@ -1,14 +1,20 @@
-# Task Graph: choosing what to do next
+# How I want to decide what to do next
 
-I keep circling back to the same problem: I want to know what to work on next, without spending 20 minutes digging through projects, notes, and half-formed tasks first.
+I keep coming back to the same problem.
 
-Capture matters. Storage matters. Whether issues live in `.taskgraph/` or the main repo probably matters too. Same for whether there should be one file per issue. But those aren't the live wire for me right now.
+I want to know what to work on next, without burning 20 minutes digging through projects, notes, and vague half-tasks first.
 
-The live wire is this: I want a system that helps me move from a big, messy set of projects to a concrete thing I can do now.
+Capture matters. Storage matters. Where the files live matters. Those questions are downstream.
 
-That sounds small. It isn't. It's the whole game.
+What matters is being able to move from a large mess of possible work to a concrete thing I can do now.
 
-What I usually want is a movement between levels. I want to start fairly high up, around projects, epics, or major areas of work. Then I want to go down fast until I hit an actual leaf task. If there isn't a good leaf task, I want that to be obvious too.
+I don't want a giant flat list. That just gives me a better organized version of overwhelm.
+
+I also don't want to stop at "work on Project X". That's too vague. A project doesn't tell me what to do with the next 30 minutes.
+
+What I want is a movement between levels.
+
+I want to start high enough to choose a direction. Then I want to go down fast until I hit a real leaf task. If there isn't a good leaf task, I want that to be obvious too.
 
 The diagrams are the point.
 
@@ -24,7 +30,9 @@ High-level view
   [Project C] -----
 ```
 
-This is useful because it helps me orient. It helps me say, "yes, that's the area I want." But it still doesn't tell me what to do.
+This helps me orient.
+
+It helps me say, "yes, that's the area." But it still doesn't tell me what to do.
 
 ## 2. Go down into a branch
 
@@ -44,11 +52,11 @@ Zoom into one branch
                +--> [Task B2.2]
 ```
 
-Better. Still not enough.
+Better. Still too vague.
 
-Projects are usually too vague. Even tasks are often still containers. I don't want to stop at "I should work on Project B" or even "I should work on Task B2.1". I want the thing I can actually do.
+Projects are often containers. Even tasks are often containers. I don't want to stop at "I should work on Project B" or even "Task B2.1". I want the thing I can actually do.
 
-## 3. Keep going until the graph yields a leaf
+## 3. Keep going until the branch yields a leaf
 
 ```text
 Find the leaf tasks
@@ -70,7 +78,7 @@ Find the leaf tasks
 
 Now we're somewhere real.
 
-This is where the graph starts paying rent. It lets me move from "this seems like the right area" to "review notes" or "email John". Small, concrete, actionable.
+This is where the structure starts paying rent. It lets me move from "this seems like the right area" to "review notes" or "email John". Small. Concrete. Actionable.
 
 ## 4. Don't show me every leaf in the universe
 
@@ -89,11 +97,11 @@ Selective descent
    [leaf: review notes]    [leaf: email John]
 ```
 
-I don't want all the leaves. That's the trap.
+This bit matters a lot.
 
-If there are 200 leaf tasks, showing me all 200 is just a more structured version of overwhelm. What I want is selective descent: choose a branch at a high level, then open that branch until I hit good candidate leaves.
+I don't want all the leaf tasks. If there are 200 of them, showing me all 200 is just a more elaborate way to drown me.
 
-That's a very different interaction from a flat backlog dump.
+I want selective descent. Choose a branch high up. Open that branch. Keep opening it until I hit a few good candidate leaves.
 
 ## 5. Sometimes the branch fails, and that's useful
 
@@ -111,11 +119,11 @@ Branch with no clear next action
                         +--> [? needs breakdown]
 ```
 
-This matters a lot.
+This is useful information.
 
-Sometimes I choose an area and there isn't a good next task in it. That isn't useless. That's exactly the kind of thing I want the graph to show me. Maybe the branch is blocked. Maybe it needs to be broken down. Maybe it's just not ripe.
+Sometimes I choose an area and there isn't a good next task in it. Fine. I want to know that. Maybe the branch is blocked. Maybe it needs breaking down. Maybe it's just not ripe yet.
 
-That's good information. It stops me kidding myself that I've "chosen a project" when I still haven't found work I can actually do.
+That is a real answer. It tells me not to pretend I've made progress by "choosing a project" when I still haven't found work I can actually do.
 
 ## 6. Cycle back, then try another branch
 
@@ -136,21 +144,21 @@ Cycle back up, then down another branch
 
 This back-and-forth is the real motion.
 
-I want to filter high up, descend quickly, test whether the branch yields a real next action, then cycle if it doesn't. That's what I keep doing in my head anyway. I'd like the system to support it instead of forcing me into either a giant flat list or a vague project tree.
+I want to filter high up, descend quickly, test whether the branch yields a real next action, then cycle if it doesn't. That's what I keep doing in my head anyway.
 
 ## Why the graph matters
 
-The graph matters because the problem lives in the movement between scales.
+The problem lives in the movement between scales.
 
-At one level, I want to decide which project or epic matters. At another, I want a leaf task I can do in 10 minutes, or 30, or 2 hours. I move back and forth between those levels constantly.
+At one level, I want to decide which project or epic matters. At another, I want a leaf task I can do in 10 minutes, 30 minutes, or 2 hours. I move between those levels constantly.
 
-Dependencies matter here. Issue types matter. Bigger items higher up the graph should usually house more subitems. Some branches should be visibly blocked. Some should clearly need decomposition. Some ideas are orthogonal and later connect across branches. Real work is messy like that.
+That's why the graph matters. It keeps the relationship between the high-level choice and the concrete action.
 
-So yes, the graph is a data structure. But more importantly, it's a way of seeing.
+Dependencies matter here too. Some branches are blocked. Some need breaking down. Bigger items higher up the graph usually have more structure beneath them. Some ideas connect across branches later. Real work is messy like that.
 
-## North star
+## What I'm trying to build
 
-Here's the thing I want:
+Here's the process I want to support:
 
 ```text
 Start high.
@@ -161,6 +169,8 @@ If there isn't a good leaf, learn why.
 Then cycle.
 ```
 
-If Task Graph can support that process well, a lot of the storage and representation questions can get worked out through use.
+That's the north star for what I'm building with Task Graph.
 
-That's the north star I care about. A system that helps me decide what to do next by moving well between scales of work.
+The job of the tool is to create the graph, keep it legible, and make it easy to move through. The job of AI is different. AI helps interpret, rank, clarify, and guide. I don't want the tool to replace that. I want it to give AI, and me, something solid to think with.
+
+If this works, then a lot of the lower-level questions about storage format, issue layout, and representation can get worked out through use. The main thing is the movement: from "what area matters?" to "what exact thing should I do now?"
