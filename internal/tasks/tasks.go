@@ -14,9 +14,10 @@ import (
 )
 
 var idPattern = regexp.MustCompile(`\[[a-z0-9]+-[0-9a-z]{3,8}\]`)
+var labelPattern = regexp.MustCompile(`(^|[\s(])#([A-Za-z0-9][A-Za-z0-9-]*)`)
 
 // AppendTask appends one markdown checklist line to tasksFile.
-func AppendTask(tasksFile, prefix, text string) error {
+func AppendTask(tasksFile, prefix, text string, labels []string) error {
 	if strings.TrimSpace(tasksFile) == "" {
 		return errors.New("tasks file is required")
 	}
@@ -34,6 +35,11 @@ func AppendTask(tasksFile, prefix, text string) error {
 	now := time.Now()
 	existingIDs := collectExistingIDs(string(existing))
 	id := generateIssueID(cleanPrefix, clean, now, existingIDs)
+	mergedLabels := MergeLabels(ExtractLabels(clean), labels)
+	if len(mergedLabels) > 0 {
+		clean = stripLabels(clean)
+		clean = strings.TrimSpace(clean + " " + formatLabels(mergedLabels))
+	}
 
 	line := fmt.Sprintf("- [ ] ➕%s [%s] %s\n", now.Format("2006-01-02"), id, clean)
 	if len(existing) > 0 && existing[len(existing)-1] != '\n' {
@@ -152,4 +158,83 @@ func ReadChecklistLines(tasksFile string) ([]string, error) {
 		return nil, err
 	}
 	return out, nil
+}
+
+func NormalizeLabelsCSV(raw string) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		label := normalizeLabel(part)
+		if label != "" {
+			out = append(out, label)
+		}
+	}
+	return MergeLabels(out)
+}
+
+func ExtractLabels(text string) []string {
+	matches := labelPattern.FindAllStringSubmatch(text, -1)
+	out := make([]string, 0, len(matches))
+	for _, match := range matches {
+		if len(match) < 3 {
+			continue
+		}
+		label := normalizeLabel(match[2])
+		if label != "" {
+			out = append(out, label)
+		}
+	}
+	return MergeLabels(out)
+}
+
+func MergeLabels(groups ...[]string) []string {
+	seen := map[string]bool{}
+	out := []string{}
+	for _, group := range groups {
+		for _, item := range group {
+			label := normalizeLabel(item)
+			if label == "" || seen[label] {
+				continue
+			}
+			seen[label] = true
+			out = append(out, label)
+		}
+	}
+	return out
+}
+
+func normalizeLabel(raw string) string {
+	label := strings.TrimSpace(strings.TrimPrefix(raw, "#"))
+	label = strings.ToLower(label)
+	if label == "" {
+		return ""
+	}
+
+	var out []rune
+	prevHyphen := false
+	for _, r := range label {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsDigit(r):
+			out = append(out, r)
+			prevHyphen = false
+		case r == '-' && len(out) > 0 && !prevHyphen:
+			out = append(out, r)
+			prevHyphen = true
+		}
+	}
+	label = strings.Trim(string(out), "-")
+	return label
+}
+
+func stripLabels(text string) string {
+	cleaned := labelPattern.ReplaceAllString(text, "$1")
+	return strings.Join(strings.Fields(cleaned), " ")
+}
+
+func formatLabels(labels []string) string {
+	parts := make([]string, 0, len(labels))
+	for _, label := range MergeLabels(labels) {
+		parts = append(parts, "#"+label)
+	}
+	return strings.Join(parts, " ")
 }

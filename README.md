@@ -10,6 +10,7 @@ Markdown-oriented, it adds a lightweight, natural performant interface to what y
 
 ```bash
 tg add "buy milk"
+tg add "plan flower show" --labels flowershow,events
 tg create "book dentist"
 tg list
 ```
@@ -52,6 +53,7 @@ Add tasks:
 
 ```bash
 tg add "buy milk"
+tg add "plan flower show" --labels flowershow,events
 tg create "book dentist"
 ```
 
@@ -59,6 +61,7 @@ View inbox captures:
 
 ```bash
 tg inbox
+tg inbox --label flowershow
 ```
 
 List indexed tasks across markdown (DB-backed):
@@ -66,6 +69,7 @@ List indexed tasks across markdown (DB-backed):
 ```bash
 tg list
 tg list --all
+tg list --label flowershow --label events
 ```
 
 Migrate from Beads JSONL:
@@ -78,7 +82,9 @@ Notes:
 
 - `tg add` auto-initializes `.taskgraph/` in the current directory if none exists in parent directories.
 - Inbox tasks are stored as checklist lines in `.taskgraph/issues.md`.
+- Labels are markdown tags stored inline in task text, for example `#flowershow`.
 - Indexed task graph is stored in `.taskgraph/taskgraph.db`.
+- The SQLite index is derived state and can be rebuilt from markdown.
 - `tg migrate-beads` expects both `./.beads/` and `./.taskgraph/` in the current directory.
 - `tg migrate-beads` imports from `./.beads/issues.jsonl` into `./.taskgraph/issues.md`.
 

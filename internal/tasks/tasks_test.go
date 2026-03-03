@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"reflect"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,7 +14,7 @@ func TestAppendTaskWritesChecklistLine(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "tasks.md")
 
-	if err := AppendTask(path, "tg", "first task"); err != nil {
+	if err := AppendTask(path, "tg", "first task", nil); err != nil {
 		t.Fatalf("AppendTask returned err: %v", err)
 	}
 
@@ -25,7 +26,7 @@ func TestAppendTaskUsesBracketedIDAndDate(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "tasks.md")
 
-	if err := AppendTask(path, "taskgraph", "first task"); err != nil {
+	if err := AppendTask(path, "taskgraph", "first task", nil); err != nil {
 		t.Fatalf("AppendTask returned err: %v", err)
 	}
 	got := readFile(t, path)
@@ -39,7 +40,7 @@ func TestAppendTaskPreservesExistingLines(t *testing.T) {
 	path := filepath.Join(dir, "tasks.md")
 	mustWrite(t, path, "- [ ] existing")
 
-	if err := AppendTask(path, "demo", "second"); err != nil {
+	if err := AppendTask(path, "demo", "second", nil); err != nil {
 		t.Fatalf("AppendTask returned err: %v", err)
 	}
 
@@ -73,6 +74,45 @@ func TestReadChecklistLinesReturnsInOrder(t *testing.T) {
 			t.Fatalf("line %d mismatch: want %q got %q", i, want[i], got[i])
 		}
 	}
+}
+
+func TestNormalizeLabelsCSV(t *testing.T) {
+	got := NormalizeLabelsCSV("Flowershow, abc, #Needs-Review, flowershow")
+	want := []string{"flowershow", "abc", "needs-review"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v want %v", got, want)
+	}
+}
+
+func TestExtractLabelsFromText(t *testing.T) {
+	got := ExtractLabels("prep venue notes #flowershow #ABC not-a-label#fragment")
+	want := []string{"flowershow", "abc"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v want %v", got, want)
+	}
+}
+
+func TestMergeLabelsDeduplicatesPreservingOrder(t *testing.T) {
+	got := MergeLabels(
+		ExtractLabels("prep venue notes #flowershow #abc"),
+		NormalizeLabelsCSV("abc,Needs-Review"),
+	)
+	want := []string{"flowershow", "abc", "needs-review"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v want %v", got, want)
+	}
+}
+
+func TestAppendTaskAppendsNormalizedLabels(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "tasks.md")
+
+	if err := AppendTask(path, "tg", "prep venue notes", []string{"flowershow", "ABC"}); err != nil {
+		t.Fatalf("AppendTask returned err: %v", err)
+	}
+
+	got := readFile(t, path)
+	assertTaskLineFormat(t, got, "tg", "prep venue notes #flowershow #abc")
 }
 
 func mustWrite(t *testing.T, path string, content string) {

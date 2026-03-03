@@ -3,6 +3,7 @@ package indexer
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -35,6 +36,27 @@ func TestBuildNodesScansMarkdownAndParsesHierarchy(t *testing.T) {
 	// Checklist states from notes.md.
 	assertHasChecklist(t, nodes, "notes.md", "Ship", "open")
 	assertHasChecklist(t, nodes, "notes.md", "Done", "closed")
+}
+
+func TestBuildNodesExtractsChecklistLabels(t *testing.T) {
+	root := t.TempDir()
+	mustWrite(t, filepath.Join(root, "notes.md"), "- [ ] Ship launch #flowershow #abc\n")
+
+	nodes, err := BuildNodes(root)
+	if err != nil {
+		t.Fatalf("BuildNodes returned error: %v", err)
+	}
+
+	for _, n := range nodes {
+		if n.Kind == "checklist" && n.Path == "notes.md" && n.Title == "Ship launch #flowershow #abc" {
+			want := []string{"flowershow", "abc"}
+			if !reflect.DeepEqual(n.Labels, want) {
+				t.Fatalf("got labels %v want %v", n.Labels, want)
+			}
+			return
+		}
+	}
+	t.Fatalf("expected checklist node with labels")
 }
 
 func assertHasNodePath(t *testing.T, nodes []Node, want string) {

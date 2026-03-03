@@ -82,6 +82,50 @@ func TestRebuildSQLiteClearsPreviousRows(t *testing.T) {
 	}
 }
 
+func TestReadChecklistNodesFiltersByLabels(t *testing.T) {
+	root := t.TempDir()
+	dbPath := filepath.Join(root, "taskgraph.db")
+
+	nodes := []Node{
+		{
+			ID:         "a",
+			Kind:       "checklist",
+			Title:      "ship #flowershow #abc",
+			State:      "open",
+			Path:       "notes.md",
+			Line:       1,
+			Context:    "notes > ship",
+			SearchText: "notes ship",
+			Source:     "scan",
+			Labels:     []string{"flowershow", "abc"},
+		},
+		{
+			ID:         "b",
+			Kind:       "checklist",
+			Title:      "other #flowershow",
+			State:      "open",
+			Path:       "other.md",
+			Line:       1,
+			Context:    "other > other",
+			SearchText: "other other",
+			Source:     "scan",
+			Labels:     []string{"flowershow"},
+		},
+	}
+
+	if err := RebuildSQLite(dbPath, nodes); err != nil {
+		t.Fatalf("RebuildSQLite returned error: %v", err)
+	}
+
+	got, err := ReadChecklistNodes(dbPath, false, []string{"flowershow", "abc"})
+	if err != nil {
+		t.Fatalf("ReadChecklistNodes returned error: %v", err)
+	}
+	if len(got) != 1 || got[0].ID != "a" {
+		t.Fatalf("unexpected filtered nodes: %#v", got)
+	}
+}
+
 func openSQLiteDB(t *testing.T, dbPath string) *sql.DB {
 	t.Helper()
 	db, err := sql.Open("sqlite", dbPath)

@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"taskgraph/internal/tasks"
 )
 
 var (
@@ -30,6 +32,7 @@ type Node struct {
 	SearchText      string
 	Source          string
 	SourceMTimeUnix int64
+	Labels          []string
 }
 
 // BuildNodes scans the root directory for markdown files and returns indexed nodes.
@@ -178,6 +181,7 @@ func indexMarkdown(content, relPath, source string, sourceMTimeUnix int64) []Nod
 				SearchText:      normalizeSearch(context + " " + title),
 				Source:          source,
 				SourceMTimeUnix: sourceMTimeUnix,
+				Labels:          nil,
 			})
 			continue
 		}
@@ -210,6 +214,7 @@ func indexMarkdown(content, relPath, source string, sourceMTimeUnix int64) []Nod
 				SearchText:      normalizeSearch(context + " " + title),
 				Source:          source,
 				SourceMTimeUnix: sourceMTimeUnix,
+				Labels:          tasks.ExtractLabels(title),
 			})
 		}
 	}

@@ -179,6 +179,38 @@ func TestInboxAllPrintsOpenAndClosedChecklistLines(t *testing.T) {
 	}
 }
 
+func TestInboxFiltersByLabel(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] a #flowershow\n- [ ] b #other\n")
+
+	stdout, stderr, err := run([]string{"inbox", "--label", "flowershow"})
+	if err != nil {
+		t.Fatalf("inbox returned err: %v stderr=%q", err, stderr)
+	}
+	if stdout != "- [ ] a #flowershow\n" {
+		t.Fatalf("unexpected inbox output: %q", stdout)
+	}
+}
+
+func TestInboxFiltersByRepeatedLabelWithANDSemantics(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] a #flowershow #abc\n- [ ] b #flowershow\n")
+
+	stdout, stderr, err := run([]string{"inbox", "--label", "flowershow", "--label", "abc"})
+	if err != nil {
+		t.Fatalf("inbox returned err: %v stderr=%q", err, stderr)
+	}
+	if stdout != "- [ ] a #flowershow #abc\n" {
+		t.Fatalf("unexpected inbox output: %q", stdout)
+	}
+}
+
 func TestListReadsChecklistFromDatabase(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
@@ -220,6 +252,32 @@ func TestListReadsChecklistFromDatabase(t *testing.T) {
 
 	if strings.Index(stdoutAll, "Beta done") > strings.Index(stdoutAll, "Alpha task") {
 		t.Fatalf("expected newest file tasks first, got %q", stdoutAll)
+	}
+}
+
+func TestListFiltersByLabel(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "alpha.md"), "# Alpha\n\n- [ ] Alpha task #flowershow #abc\n")
+	mustWrite(t, filepath.Join(dir, "beta.md"), "# Beta\n\n- [ ] Beta task #flowershow\n")
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"list", "--label", "flowershow", "--label", "abc"})
+	if err != nil {
+		t.Fatalf("list returned err: %v stderr=%q", err, stderr)
+	}
+	if !strings.Contains(stdout, "Alpha task #flowershow #abc") || strings.Contains(stdout, "Beta task") {
+		t.Fatalf("unexpected list output: %q", stdout)
 	}
 }
 
@@ -272,6 +330,36 @@ func TestAddUsesTGCWDOverride(t *testing.T) {
 	content := readFile(t, filepath.Join(targetDir, ".taskgraph", "issues.md"))
 	if !strings.Contains(content, "from override") {
 		t.Fatalf("expected task in TG_CWD directory, got %q", content)
+	}
+}
+
+func TestAddSupportsLabelsFlag(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"add", "prep venue notes", "--labels", "flowershow,ABC"})
+	if err != nil {
+		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
+	}
+
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	if !matchesTaskLine(content, expectedPrefixForDir(dir), "prep venue notes #flowershow #abc") {
+		t.Fatalf("unexpected issues.md content: %q", content)
+	}
+}
+
+func TestAddDeduplicatesExistingInlineLabels(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"add", "prep venue notes #flowershow", "--labels", "flowershow,abc"})
+	if err != nil {
+		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
+	}
+
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	if !matchesTaskLine(content, expectedPrefixForDir(dir), "prep venue notes #flowershow #abc") {
+		t.Fatalf("unexpected issues.md content: %q", content)
 	}
 }
 

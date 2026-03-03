@@ -27,6 +27,14 @@ CREATE TABLE IF NOT EXISTS index_nodes (
 CREATE INDEX IF NOT EXISTS idx_nodes_kind ON index_nodes(kind);
 CREATE INDEX IF NOT EXISTS idx_nodes_path ON index_nodes(path);
 CREATE INDEX IF NOT EXISTS idx_nodes_state ON index_nodes(state);
+
+CREATE TABLE IF NOT EXISTS index_node_labels (
+    node_id TEXT NOT NULL,
+    label TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_node_labels_node_id ON index_node_labels(node_id);
+CREATE INDEX IF NOT EXISTS idx_node_labels_label ON index_node_labels(label);
 `
 
 func RebuildSQLite(dbPath string, nodes []Node) error {
@@ -56,6 +64,9 @@ func RebuildSQLite(dbPath string, nodes []Node) error {
 	if _, err := tx.Exec("DELETE FROM index_nodes"); err != nil {
 		return fmt.Errorf("clear index_nodes: %w", err)
 	}
+	if _, err := tx.Exec("DELETE FROM index_node_labels"); err != nil {
+		return fmt.Errorf("clear index_node_labels: %w", err)
+	}
 
 	stmt, err := tx.Prepare(`
 INSERT INTO index_nodes
@@ -67,6 +78,17 @@ VALUES
 		return fmt.Errorf("prepare insert: %w", err)
 	}
 	defer stmt.Close()
+
+	labelStmt, err := tx.Prepare(`
+INSERT INTO index_node_labels
+	(node_id, label)
+VALUES
+	(?, ?)
+`)
+	if err != nil {
+		return fmt.Errorf("prepare label insert: %w", err)
+	}
+	defer labelStmt.Close()
 
 	for _, n := range nodes {
 		var parent any
@@ -88,6 +110,11 @@ VALUES
 		); err != nil {
 			return fmt.Errorf("insert node %s: %w", n.ID, err)
 		}
+		for _, label := range n.Labels {
+			if _, err := labelStmt.Exec(n.ID, label); err != nil {
+				return fmt.Errorf("insert node label %s/%s: %w", n.ID, label, err)
+			}
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -96,7 +123,7 @@ VALUES
 	return nil
 }
 
-func ReadChecklistNodes(dbPath string, includeClosed bool) ([]Node, error) {
+func ReadChecklistNodes(dbPath string, includeClosed bool, requiredLabels []string) ([]Node, error) {
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
@@ -112,6 +139,20 @@ WHERE kind = 'checklist'
 	if !includeClosed {
 		query += " AND state = ?"
 		args = append(args, "open")
+	}
+	if len(requiredLabels) > 0 {
+		query += `
+ AND id IN (
+	SELECT node_id
+	FROM index_node_labels
+	WHERE label IN (` + placeholders(len(requiredLabels)) + `)
+	GROUP BY node_id
+	HAVING COUNT(DISTINCT label) = ?
+)`
+		for _, label := range requiredLabels {
+			args = append(args, label)
+		}
+		args = append(args, len(requiredLabels))
 	}
 	query += " ORDER BY source_mtime_unix DESC, path ASC, line ASC"
 
@@ -145,6 +186,17 @@ WHERE kind = 'checklist'
 		return nil, fmt.Errorf("iterate checklist nodes: %w", err)
 	}
 	return out, nil
+}
+
+func placeholders(n int) string {
+	if n <= 0 {
+		return ""
+	}
+	out := "?"
+	for i := 1; i < n; i++ {
+		out += ", ?"
+	}
+	return out
 }
 
 func ensureColumn(db *sql.DB, table, column, columnDef string) error {
