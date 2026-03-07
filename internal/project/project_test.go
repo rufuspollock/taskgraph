@@ -176,6 +176,46 @@ func TestReadPrefixBackwardCompatibleWithOldKey(t *testing.T) {
 	}
 }
 
+func TestReadAllowedIssueTypesIncludesBuiltins(t *testing.T) {
+	root := t.TempDir()
+	mustMkdirAll(t, filepath.Join(root, ".taskgraph"))
+	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "config.yml"), []byte("issue-prefix: demo\n"), 0o644); err != nil {
+		t.Fatalf("write config failed: %v", err)
+	}
+
+	got, err := ReadAllowedIssueTypes(root)
+	if err != nil {
+		t.Fatalf("ReadAllowedIssueTypes returned err: %v", err)
+	}
+	for _, want := range []string{"task", "bug", "epic", "idea", "subtask"} {
+		if !contains(got, want) {
+			t.Fatalf("expected builtin type %q in %v", want, got)
+		}
+	}
+}
+
+func TestReadAllowedIssueTypesIncludesConfiguredCustomTypes(t *testing.T) {
+	root := t.TempDir()
+	mustMkdirAll(t, filepath.Join(root, ".taskgraph"))
+	if err := os.WriteFile(
+		filepath.Join(root, ".taskgraph", "config.yml"),
+		[]byte("issue-prefix: demo\nissue-types: research, Spike-Work\n"),
+		0o644,
+	); err != nil {
+		t.Fatalf("write config failed: %v", err)
+	}
+
+	got, err := ReadAllowedIssueTypes(root)
+	if err != nil {
+		t.Fatalf("ReadAllowedIssueTypes returned err: %v", err)
+	}
+	for _, want := range []string{"research", "spike-work"} {
+		if !contains(got, want) {
+			t.Fatalf("expected custom type %q in %v", want, got)
+		}
+	}
+}
+
 func TestEnsureConfigBackfillsMissingPrefix(t *testing.T) {
 	root := t.TempDir()
 	taskgraphDir := filepath.Join(root, ".taskgraph")
@@ -217,4 +257,13 @@ func mustReadFile(t *testing.T, path string) string {
 		t.Fatalf("read %q failed: %v", path, err)
 	}
 	return string(b)
+}
+
+func contains(list []string, item string) bool {
+	for _, v := range list {
+		if v == item {
+			return true
+		}
+	}
+	return false
 }

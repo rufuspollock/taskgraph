@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"taskgraph/internal/indexer"
@@ -13,6 +14,8 @@ import (
 	"taskgraph/internal/project"
 	"taskgraph/internal/tasks"
 )
+
+const addUsage = "usage: tg add <task text> [--labels a,b] [--type name]"
 
 // Run dispatches CLI commands.
 func Run(args []string, stdout io.Writer, stderr io.Writer) error {
@@ -61,8 +64,8 @@ USAGE
 
 COMMANDS
   init              Initialize .taskgraph in current directory
-  add <text>        Add a task to .taskgraph/issues.md
-  create <text>     Alias for add
+  add <text>        Add a task to .taskgraph/issues.md (supports --labels, --type)
+  create <text>     Alias for add (supports --labels, --type)
   inbox [--all] [--label name]
                     Print inbox checklist from .taskgraph/issues.md
   close <id> <reason>
@@ -77,6 +80,7 @@ EXAMPLES
   tg init
   tg add "buy milk"
   tg add "buy milk" --labels errands,home
+  tg add "plan launch" --type epic
   tg create "book dentist"
   tg inbox
   tg inbox --label home
@@ -88,6 +92,7 @@ EXAMPLES
 
 NOTES
   - tg add auto-initializes .taskgraph if missing
+  - use --type with one allowed task type per task
   - inbox is stored in .taskgraph/issues.md
   - index DB is stored in .taskgraph/taskgraph.db
 `
@@ -110,13 +115,13 @@ func runInit(stdout io.Writer) error {
 }
 
 func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
-	taskText, labels, err := parseAddArgs(args[1:])
+	taskText, labels, taskType, err := parseAddArgs(args[1:])
 	if err != nil {
 		fmt.Fprintln(stderr, err.Error())
 		return err
 	}
 	if strings.TrimSpace(taskText) == "" {
-		fmt.Fprintln(stderr, "usage: tg add <task text> [--labels a,b]")
+		fmt.Fprintln(stderr, addUsage)
 		return errors.New("missing task text")
 	}
 
@@ -144,7 +149,24 @@ func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if err := tasks.AppendTask(taskFile, prefix, taskText, labels); err != nil {
+	resolvedType, cleanLabels, err := tasks.ResolveTaskType(taskText, labels, taskType)
+	if err != nil {
+		fmt.Fprintln(stderr, err.Error())
+		return err
+	}
+	if resolvedType != "" {
+		allowed, err := project.ReadAllowedIssueTypes(root)
+		if err != nil {
+			return err
+		}
+		if !containsString(allowed, resolvedType) {
+			sort.Strings(allowed)
+			msg := fmt.Sprintf("unknown task type: %s (allowed: %s)", resolvedType, strings.Join(allowed, ", "))
+			fmt.Fprintln(stderr, msg)
+			return errors.New(msg)
+		}
+	}
+	if err := tasks.AppendTask(taskFile, prefix, taskText, cleanLabels, resolvedType); err != nil {
 		return err
 	}
 	if _, _, err := buildAndStoreIndex(root); err != nil {
@@ -405,22 +427,41 @@ func hasAllLabels(actual, required []string) bool {
 	return true
 }
 
-func parseAddArgs(args []string) (string, []string, error) {
+func parseAddArgs(args []string) (string, []string, string, error) {
 	var textParts []string
 	var labels []string
+	taskType := ""
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--labels", "-l":
 			if i+1 >= len(args) {
-				return "", nil, fmt.Errorf("usage: tg add <task text> [--labels a,b]")
+				return "", nil, "", fmt.Errorf(addUsage)
 			}
 			labels = append(labels, tasks.NormalizeLabelsCSV(args[i+1])...)
+			i++
+		case "--type", "-t":
+			if i+1 >= len(args) {
+				return "", nil, "", fmt.Errorf(addUsage)
+			}
+			if taskType != "" {
+				return "", nil, "", fmt.Errorf("multiple --type values are not allowed")
+			}
+			taskType = args[i+1]
 			i++
 		default:
 			textParts = append(textParts, args[i])
 		}
 	}
 
-	return strings.TrimSpace(strings.Join(textParts, " ")), tasks.MergeLabels(labels), nil
+	return strings.TrimSpace(strings.Join(textParts, " ")), tasks.MergeLabels(labels), taskType, nil
+}
+
+func containsString(items []string, value string) bool {
+	for _, item := range items {
+		if item == value {
+			return true
+		}
+	}
+	return false
 }

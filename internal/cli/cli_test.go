@@ -452,6 +452,106 @@ func TestAddSupportsLabelsFlag(t *testing.T) {
 	}
 }
 
+func TestAddSupportsTypeFlag(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"add", "plan launch", "--type", "Epic"})
+	if err != nil {
+		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
+	}
+
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	if !matchesTaskLine(content, expectedPrefixForDir(dir), "plan launch #t-epic") {
+		t.Fatalf("unexpected issues.md content: %q", content)
+	}
+}
+
+func TestCreateSupportsTypeFlag(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"create", "capture opportunity", "-t", "idea"})
+	if err != nil {
+		t.Fatalf("create returned err: %v stderr=%q", err, stderr)
+	}
+
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	if !matchesTaskLine(content, expectedPrefixForDir(dir), "capture opportunity #t-idea") {
+		t.Fatalf("unexpected issues.md content: %q", content)
+	}
+}
+
+func TestAddRejectsUnknownType(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"add", "plan launch", "--type", "unknown"})
+	if err == nil {
+		t.Fatalf("expected add to reject unknown type")
+	}
+	if !strings.Contains(stderr, "unknown task type: unknown") {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+}
+
+func TestAddAllowsConfiguredCustomType(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "issue-prefix: tg\nissue-types: research\n")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "")
+
+	_, stderr, err := run([]string{"add", "investigate options", "--type", "research"})
+	if err != nil {
+		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
+	}
+
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	if !strings.Contains(content, "investigate options #t-research") {
+		t.Fatalf("unexpected issues.md content: %q", content)
+	}
+}
+
+func TestAddRejectsMultipleTypeFlags(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"add", "plan launch", "--type", "epic", "--type", "task"})
+	if err == nil {
+		t.Fatalf("expected add to reject repeated --type")
+	}
+	if !strings.Contains(stderr, "multiple --type values") {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+}
+
+func TestAddRejectsConflictingInlineAndFlagType(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"add", "plan launch #t-epic", "--type", "task"})
+	if err == nil {
+		t.Fatalf("expected add to reject conflicting type values")
+	}
+	if !strings.Contains(stderr, "conflicting task types") {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+}
+
+func TestAddRejectsMultipleInlineTypes(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"add", "plan launch #t-epic #t-task"})
+	if err == nil {
+		t.Fatalf("expected add to reject multiple inline types")
+	}
+	if !strings.Contains(stderr, "multiple task types") {
+		t.Fatalf("unexpected stderr: %q", stderr)
+	}
+}
+
 func TestAddDeduplicatesExistingInlineLabels(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)

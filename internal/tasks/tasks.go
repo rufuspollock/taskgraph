@@ -15,9 +15,10 @@ import (
 
 var idPattern = regexp.MustCompile(`\[[a-z0-9]+-[0-9a-z]{3,8}\]`)
 var labelPattern = regexp.MustCompile(`(^|[\s(])#([A-Za-z0-9][A-Za-z0-9-]*)`)
+var typeLabelPrefix = "t-"
 
 // AppendTask appends one markdown checklist line to tasksFile.
-func AppendTask(tasksFile, prefix, text string, labels []string) error {
+func AppendTask(tasksFile, prefix, text string, labels []string, taskType string) error {
 	if strings.TrimSpace(tasksFile) == "" {
 		return errors.New("tasks file is required")
 	}
@@ -25,6 +26,10 @@ func AppendTask(tasksFile, prefix, text string, labels []string) error {
 	clean := strings.TrimSpace(text)
 	if clean == "" {
 		return errors.New("task text is required")
+	}
+	resolvedType, cleanInputLabels, err := ResolveTaskType(clean, labels, taskType)
+	if err != nil {
+		return err
 	}
 
 	existing, err := os.ReadFile(tasksFile)
@@ -35,7 +40,10 @@ func AppendTask(tasksFile, prefix, text string, labels []string) error {
 	now := time.Now()
 	existingIDs := collectExistingIDs(string(existing))
 	id := generateIssueID(cleanPrefix, clean, now, existingIDs)
-	mergedLabels := MergeLabels(ExtractLabels(clean), labels)
+	mergedLabels := MergeLabels(ExtractLabels(clean), cleanInputLabels)
+	if resolvedType != "" {
+		mergedLabels = MergeLabels(mergedLabels, []string{TypeLabel(resolvedType)})
+	}
 	if len(mergedLabels) > 0 {
 		clean = stripLabels(clean)
 		clean = strings.TrimSpace(clean + " " + formatLabels(mergedLabels))
@@ -264,6 +272,83 @@ func normalizeLabel(raw string) string {
 	}
 	label = strings.Trim(string(out), "-")
 	return label
+}
+
+func NormalizeTaskType(raw string) string {
+	normalized := normalizeLabel(raw)
+	if strings.HasPrefix(normalized, typeLabelPrefix) {
+		return strings.TrimPrefix(normalized, typeLabelPrefix)
+	}
+	return normalized
+}
+
+func TypeLabel(taskType string) string {
+	t := NormalizeTaskType(taskType)
+	if t == "" {
+		return ""
+	}
+	return typeLabelPrefix + t
+}
+
+func ExtractTaskTypeFromText(text string) (string, error) {
+	return ExtractTaskTypeFromLabels(ExtractLabels(text))
+}
+
+func ExtractTaskTypeFromLabels(labels []string) (string, error) {
+	found := ""
+	for _, label := range labels {
+		l := normalizeLabel(label)
+		if !strings.HasPrefix(l, typeLabelPrefix) {
+			continue
+		}
+		t := strings.TrimPrefix(l, typeLabelPrefix)
+		if t == "" {
+			continue
+		}
+		if found == "" || found == t {
+			found = t
+			continue
+		}
+		return "", fmt.Errorf("multiple task types found: %s, %s", found, t)
+	}
+	return found, nil
+}
+
+func ResolveTaskType(text string, labels []string, taskType string) (string, []string, error) {
+	inlineType, err := ExtractTaskTypeFromText(text)
+	if err != nil {
+		return "", nil, err
+	}
+	labelType, err := ExtractTaskTypeFromLabels(labels)
+	if err != nil {
+		return "", nil, err
+	}
+	flagType := NormalizeTaskType(taskType)
+
+	selected := ""
+	for _, candidate := range []string{inlineType, labelType, flagType} {
+		if candidate == "" {
+			continue
+		}
+		if selected == "" || selected == candidate {
+			selected = candidate
+			continue
+		}
+		return "", nil, fmt.Errorf("conflicting task types: %s, %s", selected, candidate)
+	}
+
+	outLabels := make([]string, 0, len(labels))
+	for _, label := range labels {
+		l := normalizeLabel(label)
+		if strings.HasPrefix(l, typeLabelPrefix) {
+			continue
+		}
+		if l != "" {
+			outLabels = append(outLabels, l)
+		}
+	}
+
+	return selected, MergeLabels(outLabels), nil
 }
 
 func stripLabels(text string) string {

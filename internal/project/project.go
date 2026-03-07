@@ -11,6 +11,19 @@ import (
 
 const taskgraphDirName = ".taskgraph"
 
+var builtinIssueTypes = []string{
+	"idea",
+	"initiative",
+	"product",
+	"epic",
+	"feature",
+	"task",
+	"subtask",
+	"bug",
+	"chore",
+	"decision",
+}
+
 // FindTaskgraphRoot walks upward from startDir until it finds a .taskgraph directory.
 func FindTaskgraphRoot(startDir string) (string, bool, error) {
 	if startDir == "" {
@@ -144,6 +157,34 @@ func ReadPrefix(rootDir string) (string, error) {
 	return normalizePrefix(prefix), nil
 }
 
+func ReadAllowedIssueTypes(rootDir string) ([]string, error) {
+	if strings.TrimSpace(rootDir) == "" {
+		return nil, errors.New("root directory is required")
+	}
+
+	out := append([]string{}, builtinIssueTypes...)
+	configPath := filepath.Join(rootDir, taskgraphDirName, "config.yml")
+	b, err := os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return out, nil
+		}
+		return nil, err
+	}
+
+	custom := parseIssueTypes(string(b))
+	seen := map[string]bool{}
+	merged := make([]string, 0, len(out)+len(custom))
+	for _, item := range append(out, custom...) {
+		if item == "" || seen[item] {
+			continue
+		}
+		seen[item] = true
+		merged = append(merged, item)
+	}
+	return merged, nil
+}
+
 func parsePrefix(config string) string {
 	for _, line := range strings.Split(config, "\n") {
 		line = strings.TrimSpace(line)
@@ -156,6 +197,29 @@ func parsePrefix(config string) string {
 		}
 	}
 	return ""
+}
+
+func parseIssueTypes(config string) []string {
+	for _, line := range strings.Split(config, "\n") {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "issue-types:") {
+			continue
+		}
+		raw := strings.TrimSpace(strings.TrimPrefix(line, "issue-types:"))
+		if raw == "" {
+			return nil
+		}
+		parts := strings.Split(raw, ",")
+		out := make([]string, 0, len(parts))
+		for _, p := range parts {
+			t := normalizeIssueType(p)
+			if t != "" {
+				out = append(out, t)
+			}
+		}
+		return out
+	}
+	return nil
 }
 
 func deriveDefaultPrefix(dir string) string {
@@ -177,6 +241,27 @@ func normalizePrefix(raw string) string {
 		out = out[:4]
 	}
 	return string(out)
+}
+
+func normalizeIssueType(raw string) string {
+	label := strings.TrimSpace(strings.ToLower(raw))
+	if label == "" {
+		return ""
+	}
+
+	var out []rune
+	prevHyphen := false
+	for _, r := range label {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsDigit(r):
+			out = append(out, r)
+			prevHyphen = false
+		case r == '-' && len(out) > 0 && !prevHyphen:
+			out = append(out, r)
+			prevHyphen = true
+		}
+	}
+	return strings.Trim(string(out), "-")
 }
 
 func exists(path string) bool {

@@ -14,7 +14,7 @@ func TestAppendTaskWritesChecklistLine(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "tasks.md")
 
-	if err := AppendTask(path, "tg", "first task", nil); err != nil {
+	if err := AppendTask(path, "tg", "first task", nil, ""); err != nil {
 		t.Fatalf("AppendTask returned err: %v", err)
 	}
 
@@ -26,7 +26,7 @@ func TestAppendTaskUsesBracketedIDAndDate(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "tasks.md")
 
-	if err := AppendTask(path, "taskgraph", "first task", nil); err != nil {
+	if err := AppendTask(path, "taskgraph", "first task", nil, ""); err != nil {
 		t.Fatalf("AppendTask returned err: %v", err)
 	}
 	got := readFile(t, path)
@@ -40,7 +40,7 @@ func TestAppendTaskPreservesExistingLines(t *testing.T) {
 	path := filepath.Join(dir, "tasks.md")
 	mustWrite(t, path, "- [ ] existing")
 
-	if err := AppendTask(path, "demo", "second", nil); err != nil {
+	if err := AppendTask(path, "demo", "second", nil, ""); err != nil {
 		t.Fatalf("AppendTask returned err: %v", err)
 	}
 
@@ -107,12 +107,54 @@ func TestAppendTaskAppendsNormalizedLabels(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "tasks.md")
 
-	if err := AppendTask(path, "tg", "prep venue notes", []string{"flowershow", "ABC"}); err != nil {
+	if err := AppendTask(path, "tg", "prep venue notes", []string{"flowershow", "ABC"}, ""); err != nil {
 		t.Fatalf("AppendTask returned err: %v", err)
 	}
 
 	got := readFile(t, path)
 	assertTaskLineFormat(t, got, "tg", "prep venue notes #flowershow #abc")
+}
+
+func TestExtractTaskTypeFromText(t *testing.T) {
+	got, err := ExtractTaskTypeFromText("prep venue notes #t-Epic #flowershow")
+	if err != nil {
+		t.Fatalf("ExtractTaskTypeFromText returned err: %v", err)
+	}
+	if got != "epic" {
+		t.Fatalf("got %q want %q", got, "epic")
+	}
+}
+
+func TestExtractTaskTypeFromTextRejectsMultipleTypes(t *testing.T) {
+	_, err := ExtractTaskTypeFromText("prep venue notes #t-epic #t-task")
+	if err == nil {
+		t.Fatalf("expected error for multiple inline task types")
+	}
+	if !strings.Contains(err.Error(), "multiple task types") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestResolveTaskTypeRejectsConflictingSources(t *testing.T) {
+	_, _, err := ResolveTaskType("prep venue notes #t-epic", nil, "task")
+	if err == nil {
+		t.Fatalf("expected conflict error")
+	}
+	if !strings.Contains(err.Error(), "conflicting task types") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAppendTaskAppendsTaskTypeLabel(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "tasks.md")
+
+	if err := AppendTask(path, "tg", "prep venue notes #flowershow", nil, "Epic"); err != nil {
+		t.Fatalf("AppendTask returned err: %v", err)
+	}
+
+	got := readFile(t, path)
+	assertTaskLineFormat(t, got, "tg", "prep venue notes #flowershow #t-epic")
 }
 
 func TestCloseTaskMarksInboxLineDoneWithReason(t *testing.T) {

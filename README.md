@@ -11,6 +11,7 @@ Markdown-oriented, it adds a lightweight, natural performant interface to what y
 ```bash
 tg add "buy milk"
 tg add "plan flower show" --labels flowershow,events
+tg add "map launch dependencies" --type epic
 tg create "book dentist"
 tg list
 ```
@@ -54,6 +55,7 @@ Add tasks:
 ```bash
 tg add "buy milk"
 tg add "plan flower show" --labels flowershow,events
+tg add "map launch dependencies" --type epic
 tg create "book dentist"
 ```
 
@@ -83,6 +85,8 @@ Notes:
 - `tg add` auto-initializes `.taskgraph/` in the current directory if none exists in parent directories.
 - Inbox tasks are stored as checklist lines in `.taskgraph/issues.md`.
 - Labels are markdown tags stored inline in task text, for example `#flowershow`.
+- Task types are stored as namespaced labels, for example `#t-epic`.
+- Allowed task types are built in (`idea, initiative, product, epic, feature, task, subtask, bug, chore, decision`) plus optional project custom types from `.taskgraph/config.yml` via `issue-types: ...`.
 - Indexed task graph is stored in `.taskgraph/taskgraph.db`.
 - The SQLite index is derived state and can be rebuilt from markdown.
 - `tg migrate-beads` expects both `./.beads/` and `./.taskgraph/` in the current directory.
