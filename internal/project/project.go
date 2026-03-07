@@ -14,6 +14,7 @@ const taskgraphDirName = ".taskgraph"
 var builtinIssueTypes = []string{
 	"idea",
 	"initiative",
+	"project",
 	"product",
 	"epic",
 	"feature",

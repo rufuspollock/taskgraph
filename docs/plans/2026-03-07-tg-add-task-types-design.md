@@ -20,6 +20,7 @@ Built-ins are copied into code and not sourced dynamically from docs:
 
 - `idea`
 - `initiative`
+- `project`
 - `product`
 - `epic`
 - `feature`

@@ -86,7 +86,7 @@ Notes:
 - Inbox tasks are stored as checklist lines in `.taskgraph/issues.md`.
 - Labels are markdown tags stored inline in task text, for example `#flowershow`.
 - Task types are stored as namespaced labels, for example `#t-epic`.
-- Allowed task types are built in (`idea, initiative, product, epic, feature, task, subtask, bug, chore, decision`) plus optional project custom types from `.taskgraph/config.yml` via `issue-types: ...`.
+- Allowed task types are built in (`idea, initiative, project, product, epic, feature, task, subtask, bug, chore, decision`) plus optional project custom types from `.taskgraph/config.yml` via `issue-types: ...`.
 - Indexed task graph is stored in `.taskgraph/taskgraph.db`.
 - The SQLite index is derived state and can be rebuilt from markdown.
 - `tg migrate-beads` expects both `./.beads/` and `./.taskgraph/` in the current directory.

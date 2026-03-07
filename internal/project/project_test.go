@@ -187,7 +187,7 @@ func TestReadAllowedIssueTypesIncludesBuiltins(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadAllowedIssueTypes returned err: %v", err)
 	}
-	for _, want := range []string{"task", "bug", "epic", "idea", "subtask"} {
+	for _, want := range []string{"task", "bug", "epic", "idea", "subtask", "project"} {
 		if !contains(got, want) {
 			t.Fatalf("expected builtin type %q in %v", want, got)
 		}
