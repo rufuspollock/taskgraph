@@ -174,6 +174,23 @@ func TestCloseTaskMarksInboxLineDoneWithReason(t *testing.T) {
 	}
 }
 
+func TestCloseTaskAllowsEmptyReason(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "issues.md")
+	mustWrite(t, path, "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+
+	err := CloseTask(path, "tg-abc", "")
+	if err != nil {
+		t.Fatalf("CloseTask returned err: %v", err)
+	}
+
+	got := readFile(t, path)
+	want := "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅" + todayISO() + "**\n"
+	if got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+}
+
 func TestCloseTaskReturnsErrorForUnknownID(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "issues.md")

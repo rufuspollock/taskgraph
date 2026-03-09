@@ -233,16 +233,47 @@ func TestCloseUpdatesInboxTaskWithReason(t *testing.T) {
 	}
 }
 
-func TestCloseRequiresReason(t *testing.T) {
+func TestCloseAllowsMissingReason(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
 
-	_, stderr, err := run([]string{"close", "tg-abc"})
-	if err == nil {
-		t.Fatalf("expected error for missing close reason")
+	stdout, stderr, err := run([]string{"close", "tg-abc"})
+	if err != nil {
+		t.Fatalf("close returned err: %v stderr=%q", err, stderr)
 	}
-	if !strings.Contains(stderr, "usage: tg close <id> <reason>") {
-		t.Fatalf("expected usage message, got %q", stderr)
+	if !strings.Contains(stdout, "Closed task: tg-abc") {
+		t.Fatalf("unexpected close output: %q", stdout)
+	}
+
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	want := "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅" + time.Now().Format("2006-01-02") + "**\n"
+	if content != want {
+		t.Fatalf("unexpected issues.md content: %q", content)
+	}
+}
+
+func TestCloseTreatsNullReasonAsMissing(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+
+	stdout, stderr, err := run([]string{"close", "tg-abc", "null"})
+	if err != nil {
+		t.Fatalf("close returned err: %v stderr=%q", err, stderr)
+	}
+	if !strings.Contains(stdout, "Closed task: tg-abc") {
+		t.Fatalf("unexpected close output: %q", stdout)
+	}
+
+	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	want := "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅" + time.Now().Format("2006-01-02") + "**\n"
+	if content != want {
+		t.Fatalf("unexpected issues.md content: %q", content)
 	}
 }
 

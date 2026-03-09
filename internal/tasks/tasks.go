@@ -73,9 +73,6 @@ func CloseTask(tasksFile, id, reason string) error {
 		return errors.New("task id is required")
 	}
 	reason = strings.TrimSpace(reason)
-	if reason == "" {
-		return errors.New("close reason is required")
-	}
 
 	content, err := os.ReadFile(tasksFile)
 	if err != nil {
@@ -93,7 +90,12 @@ func CloseTask(tasksFile, id, reason string) error {
 		if !strings.HasPrefix(line, "- [ ] ") {
 			return fmt.Errorf("task already closed: %s", id)
 		}
-		lines[i] = line + " **✅" + time.Now().Format("2006-01-02") + " " + reason + "**"
+		note := " **✅" + time.Now().Format("2006-01-02")
+		if reason != "" {
+			note += " " + reason
+		}
+		note += "**"
+		lines[i] = line + note
 		lines[i] = strings.Replace(lines[i], "- [ ] ", "- [x] ", 1)
 		break
 	}

@@ -68,7 +68,7 @@ COMMANDS
   create <text>     Alias for add (supports --labels, --type)
   inbox [--all] [--label name]
                     Print inbox checklist from .taskgraph/issues.md
-  close <id> <reason>
+  close <id> [reason]
                     Close an inbox task in .taskgraph/issues.md
   list [--all] [--label name]
                     Print indexed checklist tasks from SQLite
@@ -399,14 +399,18 @@ func parseInboxArgs(args []string) (bool, []string, error) {
 }
 
 func parseCloseArgs(args []string) (string, string, error) {
-	if len(args) < 2 {
-		return "", "", fmt.Errorf("usage: tg close <id> <reason>")
+	if len(args) < 1 {
+		return "", "", fmt.Errorf("usage: tg close <id> [reason]")
 	}
 
 	id := strings.TrimSpace(args[0])
+	if id == "" {
+		return "", "", fmt.Errorf("usage: tg close <id> [reason]")
+	}
+
 	reason := strings.TrimSpace(strings.Join(args[1:], " "))
-	if id == "" || reason == "" {
-		return "", "", fmt.Errorf("usage: tg close <id> <reason>")
+	if strings.EqualFold(reason, "null") {
+		reason = ""
 	}
 	return id, reason, nil
 }
