@@ -21,7 +21,7 @@
 - [ ] ➕2026-02-28 [task-mwm] handle case where we don't have ids for tasks e.g. i have hand created etc. why do we need ids btw?
 - [ ] ➕2026-02-28 [task-c98] Support task dependency and subtasks - already done implicitly i think or at least in db
 - [x] ➕2026-02-28 [task-rfa] Support for labels **✅2026-03-03 in 8d8fc89808d89786ab956274e1b376c3edbc52c4**
-- [ ] ➕2026-02-28 [task-fch] Support for task types
+- [x] ➕2026-02-28 [task-fch] Support for task types **✅2026-03-09 fixed in b07b4dcb242ebe49f3e192d7f162fe4bb8eb6c8a**
 - [ ] ➕2026-02-28 [task-rps] Support for running tg from anywhere and having a default project and being to specify the project/repo this is on
 - [x] ➕2026-02-28 [task-zm8] tg close command to close issues **✅2026-03-03 in c97dfffd1b356b94dd7fa4086727dd05190b5416**
 - [ ] ➕2026-02-28 [task-pyv] taskgraph website and landing page
@@ -31,3 +31,4 @@
 - [ ] ➕2026-03-03 [task-zki] document patterns of having projects in projects folder and project being GTD project i.e. anything with multiple subtasks
 - [ ] ➕2026-03-03 [task-wbv] reflect on how we doc patterns vs implement stuff in actual tooling
 - [ ] ➕2026-03-03 [tgcl-vpf] support closing non-inbox tasks by indexed location with safe write-back semantics
+- [ ] ➕2026-03-06 [task-u6e] support for task status in `[ ]` section as per https://publish.obsidian.md/tasks/Other+Plugins/Dataview
