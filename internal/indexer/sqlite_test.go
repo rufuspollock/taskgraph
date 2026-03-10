@@ -3,6 +3,7 @@ package indexer
 import (
 	"database/sql"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	_ "modernc.org/sqlite"
@@ -124,6 +125,137 @@ func TestReadChecklistNodesFiltersByLabels(t *testing.T) {
 	if len(got) != 1 || got[0].ID != "a" {
 		t.Fatalf("unexpected filtered nodes: %#v", got)
 	}
+}
+
+func TestReadGraphNodesReturnsTreeMetadataAndLabels(t *testing.T) {
+	root := t.TempDir()
+	dbPath := filepath.Join(root, "taskgraph.db")
+
+	nodes := []Node{
+		{
+			ID:         "file-1",
+			Kind:       "file",
+			Title:      "notes",
+			State:      "unknown",
+			Path:       "notes.md",
+			Line:       0,
+			Context:    "notes",
+			SearchText: "notes",
+			Source:     "scan",
+		},
+		{
+			ID:         "heading-root",
+			Kind:       "heading",
+			Title:      "Landscape",
+			State:      "unknown",
+			Path:       "notes.md",
+			Line:       1,
+			ParentID:   "file-1",
+			Context:    "notes > Landscape",
+			SearchText: "notes landscape",
+			Source:     "scan",
+		},
+		{
+			ID:         "checklist-typed",
+			Kind:       "checklist",
+			Title:      "Project Alpha #t-project",
+			State:      "open",
+			Path:       "notes.md",
+			Line:       2,
+			ParentID:   "heading-root",
+			Context:    "notes > Landscape > Project Alpha",
+			SearchText: "notes landscape project alpha",
+			Source:     "scan",
+			Labels:     []string{"t-project"},
+		},
+		{
+			ID:         "checklist-child-a",
+			Kind:       "checklist",
+			Title:      "Task A",
+			State:      "open",
+			Path:       "notes.md",
+			Line:       3,
+			ParentID:   "checklist-typed",
+			Context:    "notes > Landscape > Project Alpha > Task A",
+			SearchText: "task a",
+			Source:     "scan",
+		},
+		{
+			ID:         "checklist-child-b",
+			Kind:       "checklist",
+			Title:      "Task B",
+			State:      "open",
+			Path:       "notes.md",
+			Line:       4,
+			ParentID:   "checklist-typed",
+			Context:    "notes > Landscape > Project Alpha > Task B",
+			SearchText: "task b",
+			Source:     "scan",
+		},
+		{
+			ID:         "checklist-epic",
+			Kind:       "checklist",
+			Title:      "Solo Epic #t-epic",
+			State:      "open",
+			Path:       "notes.md",
+			Line:       5,
+			ParentID:   "heading-root",
+			Context:    "notes > Landscape > Solo Epic",
+			SearchText: "solo epic",
+			Source:     "scan",
+			Labels:     []string{"t-epic"},
+		},
+	}
+
+	if err := RebuildSQLite(dbPath, nodes); err != nil {
+		t.Fatalf("RebuildSQLite returned error: %v", err)
+	}
+
+	got, err := ReadGraphNodes(dbPath)
+	if err != nil {
+		t.Fatalf("ReadGraphNodes returned error: %v", err)
+	}
+
+	if len(got) != len(nodes) {
+		t.Fatalf("got %d nodes want %d", len(got), len(nodes))
+	}
+
+	typed := findNodeByID(t, got, "checklist-typed")
+	if typed.ParentID != "heading-root" {
+		t.Fatalf("typed parent = %q want %q", typed.ParentID, "heading-root")
+	}
+	if !slices.Equal(typed.Labels, []string{"t-project"}) {
+		t.Fatalf("typed labels = %#v want %#v", typed.Labels, []string{"t-project"})
+	}
+
+	children := childrenOf(got, "checklist-typed")
+	if len(children) != 2 {
+		t.Fatalf("got %d children want 2", len(children))
+	}
+	if children[0].ID != "checklist-child-a" || children[1].ID != "checklist-child-b" {
+		t.Fatalf("children order = %#v", []string{children[0].ID, children[1].ID})
+	}
+}
+
+func findNodeByID(t *testing.T, nodes []Node, id string) Node {
+	t.Helper()
+	for _, node := range nodes {
+		if node.ID == id {
+			return node
+		}
+	}
+	t.Fatalf("missing node %q", id)
+	return Node{}
+}
+
+func childrenOf(nodes []Node, parentID string) []Node {
+	out := make([]Node, 0)
+	for _, node := range nodes {
+		if node.ParentID == parentID {
+			out = append(out, node)
+		}
+	}
+	return out
 }
 
 func openSQLiteDB(t *testing.T, dbPath string) *sql.DB {

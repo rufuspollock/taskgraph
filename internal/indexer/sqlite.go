@@ -188,6 +188,83 @@ WHERE kind = 'checklist'
 	return out, nil
 }
 
+func ReadGraphNodes(dbPath string) ([]Node, error) {
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("open db: %w", err)
+	}
+	defer db.Close()
+
+	rows, err := db.Query(`
+SELECT id, kind, title, state, path, line, COALESCE(parent_id, ''), context, search_text, source, source_mtime_unix
+FROM index_nodes
+ORDER BY path ASC, line ASC, id ASC
+`)
+	if err != nil {
+		return nil, fmt.Errorf("query graph nodes: %w", err)
+	}
+	defer rows.Close()
+
+	out := []Node{}
+	for rows.Next() {
+		var n Node
+		if err := rows.Scan(
+			&n.ID,
+			&n.Kind,
+			&n.Title,
+			&n.State,
+			&n.Path,
+			&n.Line,
+			&n.ParentID,
+			&n.Context,
+			&n.SearchText,
+			&n.Source,
+			&n.SourceMTimeUnix,
+		); err != nil {
+			return nil, fmt.Errorf("scan graph node: %w", err)
+		}
+		out = append(out, n)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate graph nodes: %w", err)
+	}
+
+	labelsByNodeID, err := readLabelsByNodeID(db)
+	if err != nil {
+		return nil, err
+	}
+	for i := range out {
+		out[i].Labels = labelsByNodeID[out[i].ID]
+	}
+	return out, nil
+}
+
+func readLabelsByNodeID(db *sql.DB) (map[string][]string, error) {
+	rows, err := db.Query(`
+SELECT node_id, label
+FROM index_node_labels
+ORDER BY node_id ASC, label ASC
+`)
+	if err != nil {
+		return nil, fmt.Errorf("query node labels: %w", err)
+	}
+	defer rows.Close()
+
+	out := make(map[string][]string)
+	for rows.Next() {
+		var nodeID string
+		var label string
+		if err := rows.Scan(&nodeID, &label); err != nil {
+			return nil, fmt.Errorf("scan node label: %w", err)
+		}
+		out[nodeID] = append(out[nodeID], label)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate node labels: %w", err)
+	}
+	return out, nil
+}
+
 func placeholders(n int) string {
 	if n <= 0 {
 		return ""

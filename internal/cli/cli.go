@@ -6,7 +6,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"taskgraph/internal/indexer"
@@ -16,6 +18,8 @@ import (
 )
 
 const addUsage = "usage: tg add <task text> [--labels a,b] [--type name]"
+
+var graphLabelPattern = regexp.MustCompile(`(^|[\s(])#([A-Za-z0-9][A-Za-z0-9-]*)`)
 
 // Run dispatches CLI commands.
 func Run(args []string, stdout io.Writer, stderr io.Writer) error {
@@ -38,6 +42,8 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runClose(args[1:], stdout, stderr)
 	case "list":
 		return runList(args, stdout, stderr)
+	case "graph":
+		return runGraph(args[1:], stdout, stderr)
 	case "index":
 		return runIndex(stdout, stderr)
 	case "migrate-beads":
@@ -72,6 +78,8 @@ COMMANDS
                     Close an inbox task in .taskgraph/issues.md
   list [--all] [--label name]
                     Print indexed checklist tasks from SQLite
+  graph [--depth N] [--max-children N] [--all]
+                    Print a compact graph overview from root nodes
   index             Build SQLite index from markdown files
   migrate-beads     Import .beads/issues.jsonl into .taskgraph/issues.md
   help              Show this help
@@ -87,6 +95,8 @@ EXAMPLES
   tg close tg-abc "done on phone"
   tg list
   tg list --label errands
+  tg graph
+  tg graph --depth 3 --max-children 4
   tg index
   tg migrate-beads
 
@@ -309,6 +319,52 @@ func runIndex(stdout io.Writer, stderr io.Writer) error {
 	return nil
 }
 
+func runGraph(args []string, stdout io.Writer, stderr io.Writer) error {
+	depth, maxChildren, includeClosed, err := parseGraphArgs(args)
+	if err != nil {
+		fmt.Fprintln(stderr, err.Error())
+		return err
+	}
+
+	cwd, err := effectiveCWD()
+	if err != nil {
+		return err
+	}
+	root, found, err := project.FindTaskgraphRoot(cwd)
+	if err != nil {
+		return err
+	}
+	if !found {
+		fmt.Fprintln(stderr, "No .taskgraph found. Run `tg init` or `tg add \"task text\"`.")
+		return errors.New("not initialized")
+	}
+
+	dbPath := filepath.Join(root, ".taskgraph", "taskgraph.db")
+	nodes, err := indexer.ReadGraphNodes(dbPath)
+	if err != nil {
+		return err
+	}
+
+	selectedRoots := selectGraphRoots(nodes)
+	children := graphChildren(nodes)
+	byID := make(map[string]indexer.Node, len(nodes))
+	for _, node := range nodes {
+		byID[node.ID] = node
+	}
+	visible := graphVisibility(byID, children, selectedRoots, includeClosed)
+	for _, node := range nodes {
+		if !selectedRoots[node.ID] {
+			continue
+		}
+		if !visible[node.ID] {
+			continue
+		}
+		fmt.Fprintln(stdout, formatGraphNode(node))
+		renderGraphChildren(stdout, children, selectedRoots, visible, node.ID, 1, depth, maxChildren)
+	}
+	return nil
+}
+
 func runMigrateBeads(stdout io.Writer, stderr io.Writer) error {
 	cwd, err := effectiveCWD()
 	if err != nil {
@@ -413,6 +469,264 @@ func parseCloseArgs(args []string) (string, string, error) {
 		reason = ""
 	}
 	return id, reason, nil
+}
+
+func parseGraphArgs(args []string) (int, int, bool, error) {
+	depth := 4
+	maxChildren := 5
+	includeClosed := false
+
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--all":
+			includeClosed = true
+		case "--depth":
+			if i+1 >= len(args) {
+				return 0, 0, false, fmt.Errorf("usage: tg graph [--depth N] [--max-children N] [--all]")
+			}
+			value, err := strconv.Atoi(args[i+1])
+			if err != nil || value < 1 {
+				return 0, 0, false, fmt.Errorf("usage: tg graph [--depth N] [--max-children N] [--all]")
+			}
+			depth = value
+			i++
+		case "--max-children":
+			if i+1 >= len(args) {
+				return 0, 0, false, fmt.Errorf("usage: tg graph [--depth N] [--max-children N] [--all]")
+			}
+			value, err := strconv.Atoi(args[i+1])
+			if err != nil || value < 1 {
+				return 0, 0, false, fmt.Errorf("usage: tg graph [--depth N] [--max-children N] [--all]")
+			}
+			maxChildren = value
+			i++
+		default:
+			return 0, 0, false, fmt.Errorf("usage: tg graph [--depth N] [--max-children N] [--all]")
+		}
+	}
+
+	return depth, maxChildren, includeClosed, nil
+}
+
+var graphRootTypes = map[string]bool{
+	"idea":       true,
+	"initiative": true,
+	"project":    true,
+	"product":    true,
+	"epic":       true,
+}
+
+func selectGraphRoots(nodes []indexer.Node) map[string]bool {
+	byID := make(map[string]indexer.Node, len(nodes))
+	for _, node := range nodes {
+		byID[node.ID] = node
+	}
+	children := graphChildren(nodes)
+
+	selected := make(map[string]bool)
+	for _, node := range nodes {
+		if !isTypedGraphRoot(node) || hasTypedGraphRootAncestor(byID, node) {
+			continue
+		}
+		selected[node.ID] = true
+	}
+
+	for _, node := range nodes {
+		if node.Kind != "file" {
+			continue
+		}
+		roots := collectStructuralRoots(node, children, selected)
+		for _, root := range roots {
+			selected[root.ID] = true
+		}
+	}
+
+	return selected
+}
+
+func collectStructuralRoots(node indexer.Node, children map[string][]indexer.Node, typedRoots map[string]bool) []indexer.Node {
+	if node.Kind == "file" {
+		var out []indexer.Node
+		for _, child := range children[node.ID] {
+			out = append(out, collectStructuralRoots(child, children, typedRoots)...)
+		}
+		return out
+	}
+	if typedRoots[node.ID] {
+		return nil
+	}
+
+	remainingChildren := make([]indexer.Node, 0)
+	for _, child := range children[node.ID] {
+		if typedRoots[child.ID] {
+			continue
+		}
+		remainingChildren = append(remainingChildren, child)
+	}
+
+	descendantRoots := make([]indexer.Node, 0)
+	for _, child := range remainingChildren {
+		descendantRoots = append(descendantRoots, collectStructuralRoots(child, children, typedRoots)...)
+	}
+	if len(remainingChildren) == 0 {
+		return nil
+	}
+	if len(remainingChildren) == 1 && len(descendantRoots) == 0 {
+		if len(nonTypedChildren(children, remainingChildren[0].ID, typedRoots)) == 0 {
+			return nil
+		}
+	}
+	allHeadings := true
+	for _, child := range remainingChildren {
+		if child.Kind != "heading" {
+			allHeadings = false
+			break
+		}
+	}
+	if node.Kind == "heading" && allHeadings {
+		return descendantRoots
+	}
+	return []indexer.Node{node}
+}
+
+func nonTypedChildren(children map[string][]indexer.Node, parentID string, typedRoots map[string]bool) []indexer.Node {
+	out := make([]indexer.Node, 0)
+	for _, child := range children[parentID] {
+		if typedRoots[child.ID] {
+			continue
+		}
+		out = append(out, child)
+	}
+	return out
+}
+
+func graphChildren(nodes []indexer.Node) map[string][]indexer.Node {
+	out := make(map[string][]indexer.Node)
+	for _, node := range nodes {
+		out[node.ParentID] = append(out[node.ParentID], node)
+	}
+	return out
+}
+
+func hasTypedGraphRootAncestor(byID map[string]indexer.Node, node indexer.Node) bool {
+	parentID := node.ParentID
+	for parentID != "" {
+		parent, ok := byID[parentID]
+		if !ok {
+			return false
+		}
+		if isTypedGraphRoot(parent) {
+			return true
+		}
+		parentID = parent.ParentID
+	}
+	return false
+}
+
+func isTypedGraphRoot(node indexer.Node) bool {
+	taskType, err := tasks.ExtractTaskTypeFromLabels(node.Labels)
+	if err != nil {
+		return false
+	}
+	return graphRootTypes[taskType]
+}
+
+func renderGraphChildren(stdout io.Writer, children map[string][]indexer.Node, roots map[string]bool, visible map[string]bool, parentID string, level int, maxDepth int, maxChildren int) {
+	if level > maxDepth {
+		return
+	}
+	visibleChildren := make([]indexer.Node, 0)
+	for _, child := range children[parentID] {
+		if roots[child.ID] {
+			continue
+		}
+		if !visible[child.ID] {
+			continue
+		}
+		visibleChildren = append(visibleChildren, child)
+	}
+	hiddenCount := 0
+	if len(visibleChildren) > maxChildren {
+		hiddenCount = len(visibleChildren) - maxChildren
+		visibleChildren = visibleChildren[:maxChildren]
+	}
+	for _, child := range visibleChildren {
+		fmt.Fprintf(stdout, "%s%s\n", strings.Repeat("  ", level), formatGraphNode(child))
+		renderGraphChildren(stdout, children, roots, visible, child.ID, level+1, maxDepth, maxChildren)
+	}
+	if hiddenCount > 0 {
+		fmt.Fprintf(stdout, "%s... %d more\n", strings.Repeat("  ", level), hiddenCount)
+	}
+}
+
+func graphVisibility(byID map[string]indexer.Node, children map[string][]indexer.Node, roots map[string]bool, includeClosed bool) map[string]bool {
+	visible := make(map[string]bool, len(byID))
+	visiting := make(map[string]bool, len(byID))
+
+	var visit func(id string) bool
+	visit = func(id string) bool {
+		if v, ok := visible[id]; ok {
+			return v
+		}
+		if visiting[id] {
+			return false
+		}
+		visiting[id] = true
+		defer delete(visiting, id)
+
+		node, ok := byID[id]
+		if !ok {
+			return false
+		}
+
+		hasVisibleChild := false
+		for _, child := range children[id] {
+			if roots[child.ID] {
+				continue
+			}
+			if visit(child.ID) {
+				hasVisibleChild = true
+			}
+		}
+
+		result := false
+		switch node.Kind {
+		case "file", "heading":
+			result = hasVisibleChild
+		case "checklist":
+			if len(children[id]) > 0 {
+				result = hasVisibleChild
+			} else {
+				result = includeClosed || node.State != "closed"
+			}
+			if roots[id] && isTypedGraphRoot(node) {
+				result = true
+			}
+		default:
+			result = hasVisibleChild
+		}
+
+		visible[id] = result
+		return result
+	}
+
+	for id := range byID {
+		visit(id)
+	}
+	return visible
+}
+
+func formatGraphNode(node indexer.Node) string {
+	title := cleanGraphTitle(node.Title)
+	if taskType, err := tasks.ExtractTaskTypeFromLabels(node.Labels); err == nil && graphRootTypes[taskType] {
+		return fmt.Sprintf("[%s] %s", taskType, title)
+	}
+	return title
+}
+
+func cleanGraphTitle(title string) string {
+	cleaned := graphLabelPattern.ReplaceAllString(title, "$1")
+	return strings.Join(strings.Fields(cleaned), " ")
 }
 
 func hasAllLabels(actual, required []string) bool {

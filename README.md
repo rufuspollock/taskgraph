@@ -13,6 +13,7 @@ tg add "buy milk"
 tg add "plan flower show" --labels flowershow,events
 tg add "map launch dependencies" --type epic
 tg create "book dentist"
+tg graph
 tg list
 ```
 
@@ -74,6 +75,15 @@ tg list --all
 tg list --label flowershow --label events
 ```
 
+View a compact graph overview from genuine roots:
+
+```bash
+tg graph
+tg graph --depth 3
+tg graph --max-children 4
+tg graph --all
+```
+
 Migrate from Beads JSONL:
 
 ```bash
@@ -97,7 +107,7 @@ Notes:
 1. Capture quickly: `tg add` / `tg create` - Implemented
 2. Process inbox: `tg inbox` - Implemented
 3. View indexed task graph: `tg list` - Implemented (v1 checklist view)
-4. Graph-native planning: `tg graph` - Partial (data indexed, UX not yet shipped)
+4. Graph-native planning: `tg graph` - Implemented (compact CLI overview)
 5. Suggest best next action: `tg next` - Not yet implemented
 
 ---

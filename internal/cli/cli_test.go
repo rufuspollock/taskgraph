@@ -29,7 +29,7 @@ func TestHelpFlagsPrintHelp(t *testing.T) {
 		if err != nil {
 			t.Fatalf("expected nil error for %q, got %v stderr=%q", arg, err, stderr)
 		}
-		if !strings.Contains(stdout, "COMMANDS") || !strings.Contains(stdout, "tg add") {
+		if !strings.Contains(stdout, "COMMANDS") || !strings.Contains(stdout, "tg add") || !strings.Contains(stdout, "tg graph") {
 			t.Fatalf("expected help output for %q, got %q", arg, stdout)
 		}
 		if !strings.Contains(stdout, "TaskGraph") {
@@ -448,6 +448,315 @@ func TestIndexBuildsTaskgraphDatabase(t *testing.T) {
 		t.Fatalf("expected index summary, got %q", stdout)
 	}
 	assertExists(t, filepath.Join(dir, ".taskgraph", "taskgraph.db"))
+}
+
+func TestGraphShowsTopLevelBranchingAndTypedRoots(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "landscape.md"), strings.Join([]string{
+		"# Landscape",
+		"",
+		"## Platform",
+		"- [ ] Build graph view",
+		"  - [ ] Add root heuristic",
+		"- [ ] Solo project #t-project",
+		"",
+		"## Scratch",
+		"- [ ] One-off note",
+		"",
+		"## Ideas",
+		"- [ ] Explore D3 #t-idea",
+	}, "\n")+"\n")
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"graph"})
+	if err != nil {
+		t.Fatalf("graph returned err: %v stderr=%q", err, stderr)
+	}
+
+	want := strings.Join([]string{
+		"Platform",
+		"  Build graph view",
+		"    Add root heuristic",
+		"[project] Solo project",
+		"[idea] Explore D3",
+	}, "\n") + "\n"
+	if stdout != want {
+		t.Fatalf("unexpected graph output:\n%s\nwant:\n%s", stdout, want)
+	}
+}
+
+func TestGraphPrefersTypedRootsOverStructuralAncestors(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "projects.md"), strings.Join([]string{
+		"# Projects",
+		"",
+		"## Active",
+		"- [ ] TaskGraph roadmap #t-project",
+		"  - [ ] Add tg graph",
+		"  - [ ] Add tg next",
+	}, "\n")+"\n")
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"graph"})
+	if err != nil {
+		t.Fatalf("graph returned err: %v stderr=%q", err, stderr)
+	}
+
+	want := strings.Join([]string{
+		"[project] TaskGraph roadmap",
+		"  Add tg graph",
+		"  Add tg next",
+	}, "\n") + "\n"
+	if stdout != want {
+		t.Fatalf("unexpected graph output:\n%s\nwant:\n%s", stdout, want)
+	}
+}
+
+func TestGraphLimitsDepth(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "deep.md"), strings.Join([]string{
+		"# Deep",
+		"",
+		"## Platform",
+		"- [ ] Build graph view",
+		"  - [ ] Add root heuristic",
+		"    - [ ] Tune root ranking",
+	}, "\n")+"\n")
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"graph", "--depth", "2"})
+	if err != nil {
+		t.Fatalf("graph returned err: %v stderr=%q", err, stderr)
+	}
+
+	want := strings.Join([]string{
+		"Platform",
+		"  Build graph view",
+		"    Add root heuristic",
+	}, "\n") + "\n"
+	if stdout != want {
+		t.Fatalf("unexpected graph output:\n%s\nwant:\n%s", stdout, want)
+	}
+}
+
+func TestGraphLimitsChildrenAndShowsOmissionMarker(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "wide.md"), strings.Join([]string{
+		"# Wide",
+		"",
+		"## Platform",
+		"- [ ] Branch",
+		"  - [ ] Child 1",
+		"  - [ ] Child 2",
+		"  - [ ] Child 3",
+		"  - [ ] Child 4",
+		"  - [ ] Child 5",
+		"  - [ ] Child 6",
+	}, "\n")+"\n")
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"graph", "--max-children", "3"})
+	if err != nil {
+		t.Fatalf("graph returned err: %v stderr=%q", err, stderr)
+	}
+
+	want := strings.Join([]string{
+		"Platform",
+		"  Branch",
+		"    Child 1",
+		"    Child 2",
+		"    Child 3",
+		"    ... 3 more",
+	}, "\n") + "\n"
+	if stdout != want {
+		t.Fatalf("unexpected graph output:\n%s\nwant:\n%s", stdout, want)
+	}
+}
+
+func TestGraphHidesClosedChecklistItemsByDefault(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "closed.md"), strings.Join([]string{
+		"# Closed",
+		"",
+		"## Platform",
+		"- [ ] Branch",
+		"  - [x] Done child",
+		"  - [ ] Open child",
+	}, "\n")+"\n")
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"graph"})
+	if err != nil {
+		t.Fatalf("graph returned err: %v stderr=%q", err, stderr)
+	}
+
+	want := strings.Join([]string{
+		"Platform",
+		"  Branch",
+		"    Open child",
+	}, "\n") + "\n"
+	if stdout != want {
+		t.Fatalf("unexpected graph output:\n%s\nwant:\n%s", stdout, want)
+	}
+}
+
+func TestGraphAllIncludesClosedChecklistItems(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "closed.md"), strings.Join([]string{
+		"# Closed",
+		"",
+		"## Platform",
+		"- [ ] Branch",
+		"  - [x] Done child",
+		"  - [ ] Open child",
+	}, "\n")+"\n")
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"graph", "--all"})
+	if err != nil {
+		t.Fatalf("graph returned err: %v stderr=%q", err, stderr)
+	}
+
+	want := strings.Join([]string{
+		"Platform",
+		"  Branch",
+		"    Done child",
+		"    Open child",
+	}, "\n") + "\n"
+	if stdout != want {
+		t.Fatalf("unexpected graph output:\n%s\nwant:\n%s", stdout, want)
+	}
+}
+
+func TestGraphKeepsTypedRootVisibleWhenChildrenAreClosed(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "typed.md"), strings.Join([]string{
+		"# Typed",
+		"",
+		"## Projects",
+		"- [ ] Solo project #t-project",
+		"  - [x] Done child",
+	}, "\n")+"\n")
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"graph"})
+	if err != nil {
+		t.Fatalf("graph returned err: %v stderr=%q", err, stderr)
+	}
+
+	want := "[project] Solo project\n"
+	if stdout != want {
+		t.Fatalf("unexpected graph output:\n%s\nwant:\n%s", stdout, want)
+	}
+}
+
+func TestGraphHidesStructuralRootWhenOnlyClosedDescendantsRemain(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	_, stderr, err := run([]string{"init"})
+	if err != nil {
+		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
+	}
+
+	mustWrite(t, filepath.Join(dir, "closed-branch.md"), strings.Join([]string{
+		"# Closed Branch",
+		"",
+		"## Platform",
+		"- [ ] Branch",
+		"  - [x] Done child",
+	}, "\n")+"\n")
+
+	_, stderr, err = run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"graph"})
+	if err != nil {
+		t.Fatalf("graph returned err: %v stderr=%q", err, stderr)
+	}
+
+	if stdout != "" {
+		t.Fatalf("expected empty graph output, got %q", stdout)
+	}
 }
 
 func TestAddUsesTGCWDOverride(t *testing.T) {
