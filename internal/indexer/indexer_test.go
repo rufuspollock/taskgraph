@@ -59,6 +59,51 @@ func TestBuildNodesExtractsChecklistLabels(t *testing.T) {
 	t.Fatalf("expected checklist node with labels")
 }
 
+func TestBuildNodesCreatesChecklistParentChildRelationships(t *testing.T) {
+	root := t.TempDir()
+	mustWrite(t, filepath.Join(root, "notes.md"), "# Project\n- [ ] Parent\n  - [ ] Child\n    - [ ] Grandchild\n- [ ] Sibling\n")
+
+	nodes, err := BuildNodes(root)
+	if err != nil {
+		t.Fatalf("BuildNodes returned error: %v", err)
+	}
+
+	project := findNodeByKindAndTitle(t, nodes, "heading", "Project")
+	parent := findNodeByKindAndTitle(t, nodes, "checklist", "Parent")
+	child := findNodeByKindAndTitle(t, nodes, "checklist", "Child")
+	grandchild := findNodeByKindAndTitle(t, nodes, "checklist", "Grandchild")
+	sibling := findNodeByKindAndTitle(t, nodes, "checklist", "Sibling")
+
+	if parent.ParentID != project.ID {
+		t.Fatalf("parent parent_id = %q, want project heading id %q", parent.ParentID, project.ID)
+	}
+	if child.ParentID != parent.ID {
+		t.Fatalf("child parent_id = %q, want parent checklist id %q", child.ParentID, parent.ID)
+	}
+	if grandchild.ParentID != child.ID {
+		t.Fatalf("grandchild parent_id = %q, want child checklist id %q", grandchild.ParentID, child.ID)
+	}
+	if sibling.ParentID != project.ID {
+		t.Fatalf("sibling parent_id = %q, want project heading id %q", sibling.ParentID, project.ID)
+	}
+}
+
+func TestBuildNodesDoesNotCarryChecklistParentAcrossHeadings(t *testing.T) {
+	root := t.TempDir()
+	mustWrite(t, filepath.Join(root, "notes.md"), "## One\n- [ ] Parent\n## Two\n  - [ ] Child\n")
+
+	nodes, err := BuildNodes(root)
+	if err != nil {
+		t.Fatalf("BuildNodes returned error: %v", err)
+	}
+
+	two := findNodeByKindAndTitle(t, nodes, "heading", "Two")
+	child := findNodeByKindAndTitle(t, nodes, "checklist", "Child")
+	if child.ParentID != two.ID {
+		t.Fatalf("child parent_id = %q, want heading Two id %q", child.ParentID, two.ID)
+	}
+}
+
 func assertHasNodePath(t *testing.T, nodes []Node, want string) {
 	t.Helper()
 	for _, n := range nodes {
@@ -86,6 +131,17 @@ func assertHasChecklist(t *testing.T, nodes []Node, path, title, state string) {
 		}
 	}
 	t.Fatalf("expected checklist path=%q title=%q state=%q", path, title, state)
+}
+
+func findNodeByKindAndTitle(t *testing.T, nodes []Node, kind, title string) Node {
+	t.Helper()
+	for _, n := range nodes {
+		if n.Kind == kind && n.Title == title {
+			return n
+		}
+	}
+	t.Fatalf("expected node kind=%q title=%q", kind, title)
+	return Node{}
 }
 
 func mustMkdirAll(t *testing.T, path string) {

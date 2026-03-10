@@ -15,3 +15,11 @@ TaskGraph stores authoritative task data in markdown files.
 - It exists to make queries and listing fast.
 - It must be rebuildable from markdown at any time without data loss.
 - New features should keep authoritative data in markdown rather than introducing database-only state.
+
+## Database Schema
+
+Canonical schema is defined in code: `internal/indexer/sqlite.go` (`const schema`).
+
+Current tables:
+- `index_nodes`: indexed file/heading/checklist nodes and hierarchy (`parent_id`), plus search/source metadata.
+- `index_node_labels`: normalized label rows (`node_id`, `label`) for filtering.

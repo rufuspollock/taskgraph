@@ -16,7 +16,7 @@ import (
 
 var (
 	headingPattern   = regexp.MustCompile(`^(#{1,6})\s+(.*)$`)
-	checklistPattern = regexp.MustCompile(`^\s*-\s*\[( |x|X)\]\s+(.*)$`)
+	checklistPattern = regexp.MustCompile(`^(\s*)-\s*\[( |x|X)\]\s+(.*)$`)
 )
 
 // Node is one indexed markdown element.
@@ -147,7 +147,13 @@ func indexMarkdown(content, relPath, source string, sourceMTimeUnix int64) []Nod
 		title string
 		id    string
 	}
+	type checklistEntry struct {
+		indent int
+		title  string
+		id     string
+	}
 	var stack []headingEntry
+	var checklistStack []checklistEntry
 
 	lines := strings.Split(content, "\n")
 	for i, line := range lines {
@@ -168,6 +174,8 @@ func indexMarkdown(content, relPath, source string, sourceMTimeUnix int64) []Nod
 			pathBits = append(pathBits, title)
 			id := buildNodeID(relPath, pathBits, lineNo, "heading")
 			stack = append(stack, headingEntry{level: level, title: title, id: id})
+			// A new heading starts a new section, so checklist ancestry does not carry across it.
+			checklistStack = nil
 			context := buildContext(fileTitle, pathBits)
 			nodes = append(nodes, Node{
 				ID:              id,
@@ -186,18 +194,30 @@ func indexMarkdown(content, relPath, source string, sourceMTimeUnix int64) []Nod
 			continue
 		}
 
-		if m := checklistPattern.FindStringSubmatch(line); len(m) == 3 {
-			checked := strings.EqualFold(m[1], "x")
-			title := strings.TrimSpace(m[2])
+		if m := checklistPattern.FindStringSubmatch(line); len(m) == 4 {
+			indent := leadingIndentWidth(m[1])
+			checked := strings.EqualFold(m[2], "x")
+			title := strings.TrimSpace(m[3])
 			state := "open"
 			if checked {
 				state = "closed"
 			}
+
+			for len(checklistStack) > 0 && checklistStack[len(checklistStack)-1].indent >= indent {
+				checklistStack = checklistStack[:len(checklistStack)-1]
+			}
+
 			parentID := fileID
 			pathBits := []string{}
 			for _, h := range stack {
 				pathBits = append(pathBits, h.title)
 				parentID = h.id
+			}
+			for _, c := range checklistStack {
+				pathBits = append(pathBits, c.title)
+			}
+			if len(checklistStack) > 0 {
+				parentID = checklistStack[len(checklistStack)-1].id
 			}
 			pathBits = append(pathBits, title)
 			id := buildNodeID(relPath, pathBits, lineNo, "checklist")
@@ -216,6 +236,11 @@ func indexMarkdown(content, relPath, source string, sourceMTimeUnix int64) []Nod
 				SourceMTimeUnix: sourceMTimeUnix,
 				Labels:          tasks.ExtractLabels(title),
 			})
+			checklistStack = append(checklistStack, checklistEntry{
+				indent: indent,
+				title:  title,
+				id:     id,
+			})
 		}
 	}
 
@@ -230,6 +255,19 @@ func buildContext(fileTitle string, pathBits []string) string {
 
 func normalizeSearch(s string) string {
 	return strings.ToLower(strings.TrimSpace(s))
+}
+
+func leadingIndentWidth(s string) int {
+	width := 0
+	for _, r := range s {
+		switch r {
+		case ' ':
+			width++
+		case '\t':
+			width += 4
+		}
+	}
+	return width
 }
 
 func buildNodeID(path string, pathBits []string, line int, kind string) string {
