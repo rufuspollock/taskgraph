@@ -58,84 +58,66 @@
       }
 
       .graph-stage {
-        position: relative;
         border: 1px solid var(--line);
         background: white;
         overflow: hidden;
       }
 
-      .graph-stage::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
-          linear-gradient(to right, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
-        background-size: 28px 28px;
-        pointer-events: none;
+      .graph-svg {
+        display: block;
+        width: 100%;
+        height: auto;
       }
 
-      .node,
-      .edge,
-      .leaf-pulse,
-      .branch-mark {
-        position: absolute;
+      .graph-grid {
+        stroke: rgba(0, 0, 0, 0.03);
+        stroke-width: 1;
       }
 
-      .node {
-        min-width: 30px;
-        padding: 7px 14px;
-        border: 1px solid #efefef;
-        border-radius: 9999px;
-        background: #fcfcfc;
-        font-size: 12px;
-        line-height: 1.3;
-        color: #707070;
-        transform: translate(-50%, -50%);
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+      .graph-edge {
+        fill: none;
+        stroke: #dddddd;
+        stroke-width: 2;
+        stroke-linecap: round;
       }
 
-      .node.primary {
-        color: var(--ink);
+      .graph-edge.active {
+        animation: svg-edge-focus 7s infinite;
       }
 
-      .node.active {
-        animation: node-focus 7s infinite;
+      .graph-node-pill {
+        fill: #fcfcfc;
+        stroke: #ececec;
+        stroke-width: 2;
       }
 
-      .node.leaf {
-        color: var(--ink);
+      .graph-node-pill.active {
+        animation: svg-node-focus 7s infinite;
       }
 
-      .node.leaf.active {
-        animation: leaf-focus 7s infinite;
+      .graph-node-pill.leaf.active {
+        animation: svg-leaf-focus 7s infinite;
       }
 
-      .edge {
-        height: 1px;
-        background: #e2e2e2;
-        transform-origin: 0 50%;
+      .graph-node-label {
+        fill: #6a6a6a;
+        font-size: 18px;
       }
 
-      .edge.active {
-        animation: edge-focus 7s infinite;
+      .graph-node-label.active {
+        animation: svg-label-focus 7s infinite;
       }
 
-      .branch-mark {
-        width: 10px;
-        height: 10px;
-        border-radius: 9999px;
-        background: var(--ink);
+      .graph-node-label.leaf {
+        fill: var(--ink);
+      }
+
+      .graph-pulse {
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 1.5;
         opacity: 0;
-        animation: branch-mark 7s infinite;
-      }
-
-      .leaf-pulse {
-        width: 18px;
-        height: 18px;
-        border: 1px solid var(--ink);
-        border-radius: 9999px;
-        opacity: 0;
-        animation: pulse-leaf 7s infinite;
+        animation: svg-pulse 7s infinite;
       }
 
       @keyframes fade-in {
@@ -149,81 +131,85 @@
         }
       }
 
-      @keyframes node-focus {
+      @keyframes svg-edge-focus {
         0%, 100% {
-          border-color: #efefef;
-          color: #707070;
-          background: #fcfcfc;
+          stroke: #dddddd;
+          stroke-width: 2;
         }
         12%, 24% {
-          border-color: #dadada;
-          color: var(--ink);
-          background: #f6f6f6;
+          stroke: var(--ink);
+          stroke-width: 2.6;
         }
         48%, 60% {
-          border-color: #dadada;
-          color: var(--ink);
-          background: #f6f6f6;
+          stroke: var(--ink);
+          stroke-width: 2.6;
         }
-        76%, 92% {
-          border-color: #d2d2d2;
-          color: var(--ink);
-          background: #f4f4f4;
+        76%, 96% {
+          stroke: var(--ink);
+          stroke-width: 2.8;
         }
       }
 
-      @keyframes leaf-focus {
+      @keyframes svg-node-focus {
+        0%, 100% {
+          stroke: #ececec;
+          fill: #fcfcfc;
+        }
+        12%, 24% {
+          stroke: #d6d6d6;
+          fill: #f6f6f6;
+        }
+        48%, 60% {
+          stroke: #d6d6d6;
+          fill: #f6f6f6;
+        }
+        76%, 96% {
+          stroke: var(--ink);
+          fill: #f2f2f2;
+        }
+      }
+
+      @keyframes svg-leaf-focus {
         0%, 70%, 100% {
-          border-color: #ececec;
-          background: #fcfcfc;
+          stroke: #ececec;
+          fill: #fcfcfc;
         }
         76%, 96% {
-          border-color: var(--ink);
-          background: #f2f2f2;
+          stroke: var(--ink);
+          fill: #f1f1f1;
         }
       }
 
-      @keyframes edge-focus {
+      @keyframes svg-label-focus {
         0%, 100% {
-          background: #e2e2e2;
+          fill: #6a6a6a;
         }
         12%, 24% {
-          background: var(--ink);
+          fill: var(--ink);
         }
         48%, 60% {
-          background: var(--ink);
+          fill: var(--ink);
         }
         76%, 96% {
-          background: var(--ink);
+          fill: var(--ink);
         }
       }
 
-      @keyframes branch-mark {
-        0%, 8%, 100% {
-          opacity: 0;
-          transform: scale(0.5);
-        }
-        12%, 26% {
-          opacity: 1;
-          transform: scale(1);
-        }
-        30%, 100% {
-          opacity: 0;
-        }
-      }
-
-      @keyframes pulse-leaf {
+      @keyframes svg-pulse {
         0%, 72%, 100% {
           opacity: 0;
           transform: scale(0.7);
+          transform-origin: center;
         }
         78% {
           opacity: 0.8;
           transform: scale(1);
+          transform-origin: center;
         }
         92% {
           opacity: 0;
           transform: scale(1.9);
+          transform-origin: center;
         }
       }
     </style>
@@ -260,33 +246,79 @@
       </section>
 
       <section class="mx-auto mt-12 max-w-4xl fade-in">
-        <div class="graph-stage h-[420px] w-full">
-          <div class="node primary active" style="left: 50%; top: 16%;">Project</div>
+        <div class="graph-stage">
+          <svg
+            class="graph-svg"
+            viewBox="0 0 1200 420"
+            role="img"
+            aria-label="Task graph moving from a project through a selected branch to a leaf task"
+          >
+            <defs>
+              <pattern id="graph-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+                <path d="M 28 0 L 0 0 0 28" class="graph-grid" />
+              </pattern>
+            </defs>
 
-          <div class="node active" style="left: 34%; top: 38%;">Epic research</div>
-          <div class="node" style="left: 66%; top: 38%;">Epic launch</div>
+            <rect x="0" y="0" width="1200" height="420" fill="url(#graph-grid)" />
 
-          <div class="node active" style="left: 26%; top: 61%;">Task: graph model</div>
-          <div class="node" style="left: 46%; top: 61%;">Task: import notes</div>
-          <div class="node" style="left: 66%; top: 61%;">Task: docs</div>
+            <path class="graph-edge active" d="M600 66 L412 160" />
+            <path class="graph-edge" d="M600 66 L788 160" />
 
-          <div class="node leaf active" style="left: 22%; top: 84%;">leaf: review notes</div>
-          <div class="node leaf" style="left: 40%; top: 84%;">leaf: draft outline</div>
-          <div class="node leaf" style="left: 66%; top: 84%;">leaf: email John</div>
+            <path class="graph-edge active" d="M412 160 L312 250" />
+            <path class="graph-edge" d="M412 160 L500 250" />
+            <path class="graph-edge" d="M788 160 L788 250" />
 
-          <div class="edge active" style="left: 50%; top: 16%; width: 28%; transform: rotate(129deg);"></div>
-          <div class="edge" style="left: 50%; top: 16%; width: 28%; transform: rotate(51deg);"></div>
+            <path class="graph-edge active" d="M312 250 L252 336" />
+            <path class="graph-edge" d="M312 250 L430 336" />
+            <path class="graph-edge" d="M788 250 L788 336" />
 
-          <div class="edge active" style="left: 34%; top: 38%; width: 17%; transform: rotate(130deg);"></div>
-          <div class="edge" style="left: 34%; top: 38%; width: 18%; transform: rotate(63deg);"></div>
-          <div class="edge" style="left: 66%; top: 38%; width: 23%; transform: rotate(90deg);"></div>
+            <g>
+              <rect class="graph-node-pill active" x="520" y="36" width="160" height="44" rx="22" />
+              <text class="graph-node-label active" x="600" y="63" text-anchor="middle">Project</text>
+            </g>
 
-          <div class="edge active" style="left: 26%; top: 61%; width: 14%; transform: rotate(106deg);"></div>
-          <div class="edge" style="left: 26%; top: 61%; width: 15%; transform: rotate(58deg);"></div>
-          <div class="edge" style="left: 66%; top: 61%; width: 15%; transform: rotate(90deg);"></div>
+            <g>
+              <rect class="graph-node-pill active" x="320" y="138" width="184" height="44" rx="22" />
+              <text class="graph-node-label active" x="412" y="165" text-anchor="middle">Epic research</text>
+            </g>
 
-          <div class="branch-mark" style="left: 34%; top: 38%;"></div>
-          <div class="leaf-pulse" style="left: calc(22% - 9px); top: calc(84% - 9px);"></div>
+            <g>
+              <rect class="graph-node-pill" x="704" y="138" width="168" height="44" rx="22" />
+              <text class="graph-node-label" x="788" y="165" text-anchor="middle">Epic launch</text>
+            </g>
+
+            <g>
+              <rect class="graph-node-pill active" x="226" y="228" width="172" height="44" rx="22" />
+              <text class="graph-node-label active" x="312" y="255" text-anchor="middle">Task: graph model</text>
+            </g>
+
+            <g>
+              <rect class="graph-node-pill" x="400" y="228" width="200" height="44" rx="22" />
+              <text class="graph-node-label" x="500" y="255" text-anchor="middle">Task: import notes</text>
+            </g>
+
+            <g>
+              <rect class="graph-node-pill" x="710" y="228" width="156" height="44" rx="22" />
+              <text class="graph-node-label" x="788" y="255" text-anchor="middle">Task: docs</text>
+            </g>
+
+            <g>
+              <rect class="graph-node-pill leaf active" x="162" y="314" width="180" height="44" rx="22" />
+              <text class="graph-node-label leaf active" x="252" y="341" text-anchor="middle">leaf: review notes</text>
+            </g>
+
+            <g>
+              <rect class="graph-node-pill leaf" x="338" y="314" width="184" height="44" rx="22" />
+              <text class="graph-node-label leaf" x="430" y="341" text-anchor="middle">leaf: draft outline</text>
+            </g>
+
+            <g>
+              <rect class="graph-node-pill leaf" x="698" y="314" width="180" height="44" rx="22" />
+              <text class="graph-node-label leaf" x="788" y="341" text-anchor="middle">leaf: email John</text>
+            </g>
+
+            <circle class="graph-pulse" cx="252" cy="336" r="18" />
+          </svg>
         </div>
         <div class="mt-4 grid gap-4 text-xs text-[color:var(--muted)] sm:grid-cols-3">
           <p>High-level orientation tells you which area matters.</p>

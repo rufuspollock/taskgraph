@@ -36,6 +36,8 @@ checks2=(
   "id=\"quickstart\""
   "id=\"vision\""
   ">Project<"
+  "<svg"
+  "graph-svg"
 )
 
 for pattern in "${checks2[@]}"; do
@@ -51,5 +53,10 @@ for disallowed in "Project A" "Project B" "Project C"; do
     exit 1
   fi
 done
+
+if grep -q 'class="edge active"' "$file2"; then
+  echo "FAIL: found obsolete HTML edge hero markup in $file2"
+  exit 1
+fi
 
 echo "PASS: primary index landing page contains required sections"
