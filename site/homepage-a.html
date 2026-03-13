@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TaskGraph - Local-first task capture for markdown and AI workflows</title>
+    <meta
+      name="description"
+      content="TaskGraph is a local-first CLI for quick task capture, markdown-native task graphs, and AI-friendly planning workflows."
+    />
+    <meta
+      property="og:title"
+      content="TaskGraph - Local-first task capture for markdown and AI workflows"
+    />
+    <meta
+      property="og:description"
+      content="Quick task capture, markdown as source of truth, and a queryable local task graph for humans and AI tools."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TaskGraph" />
+    <meta property="og:url" content="https://github.com/rufuspollock/taskgraph" />
+    <meta
+      name="twitter:card"
+      content="summary_large_image"
+    />
+    <meta
+      name="twitter:title"
+      content="TaskGraph - Local-first task capture for markdown and AI workflows"
+    />
+    <meta
+      name="twitter:description"
+      content="A markdown-oriented CLI for fast task capture, inbox processing, and graph-native planning."
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --bg-start: #f8f4ee;
+        --bg-end: #efe7dc;
+        --ink: #14120f;
+        --muted-ink: #6b635b;
+        --divider: #e1d7ca;
+        --accent: #c9b59c;
+        --selection: #e7ddcf;
+        --green-1: #bdd9b3;
+        --green-2: #98c58f;
+        --blue-ink: #3d6f9a;
+        --red-ink: #e15a4f;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: "Iosevka", "IBM Plex Mono", "SFMono-Regular", "SF Mono",
+          "Menlo", "Monaco", "Courier New", monospace;
+        background: radial-gradient(
+            circle at top,
+            #faf7f1 0%,
+            var(--bg-start) 40%,
+            var(--bg-end) 100%
+          ),
+          repeating-linear-gradient(
+            135deg,
+            rgba(20, 18, 15, 0.04),
+            rgba(20, 18, 15, 0.04) 1px,
+            transparent 1px,
+            transparent 6px
+          );
+        color: var(--ink);
+      }
+
+      ::selection {
+        background: var(--selection);
+      }
+
+      .fade-up {
+        animation: fade-up 700ms ease both;
+      }
+
+      .fade-up.delay-1 {
+        animation-delay: 120ms;
+      }
+
+      .fade-up.delay-2 {
+        animation-delay: 220ms;
+      }
+
+      .fade-up.delay-3 {
+        animation-delay: 320ms;
+      }
+
+      .terminal-glow {
+        box-shadow: 0 18px 50px rgba(20, 18, 15, 0.08);
+      }
+
+      @keyframes fade-up {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <main class="mx-auto flex w-full max-w-5xl flex-col gap-16 px-6 pb-20 pt-16 sm:px-10">
+      <section class="flex flex-col gap-10">
+        <div class="flex flex-col gap-10 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex max-w-2xl flex-col gap-5">
+            <div class="flex items-center gap-3 fade-up">
+              <svg class="h-12 w-12" viewBox="0 0 64 64" aria-hidden="true">
+                <defs>
+                  <linearGradient id="graph" x1="0" x2="1">
+                    <stop offset="0" stop-color="#bcd4f0" />
+                    <stop offset="1" stop-color="#6aa7df" />
+                  </linearGradient>
+                </defs>
+                <circle cx="18" cy="20" r="7" fill="url(#graph)" />
+                <circle cx="45" cy="16" r="6" fill="var(--green-2)" />
+                <circle cx="32" cy="45" r="8" fill="var(--red-ink)" />
+                <path d="M23 22l16-4M21 25l8 14M40 22l-5 16" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" />
+              </svg>
+              <span class="text-sm uppercase tracking-[0.3em] text-[color:var(--muted-ink)]">TaskGraph</span>
+            </div>
+            <h1 class="text-3xl font-semibold leading-tight sm:text-5xl fade-up delay-1">
+              Capture fast. Keep markdown. Query the graph.
+            </h1>
+            <p class="text-base leading-relaxed text-[color:var(--muted-ink)] sm:text-lg fade-up delay-2">
+              TaskGraph is a local-first CLI for quick task capture and simple task listing.
+              Markdown stays the source of truth, SQLite stays derived, and AI tools get a clean planning substrate instead of another silo.
+            </p>
+            <div class="flex flex-wrap gap-3 fade-up delay-3">
+              <a
+                class="rounded-full border border-transparent bg-[color:var(--ink)] px-5 py-2 text-sm text-[color:var(--bg-start)] transition hover:translate-y-[-1px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                href="#install"
+              >
+                Install
+              </a>
+              <a
+                class="rounded-full border border-[color:var(--divider)] px-5 py-2 text-sm text-[color:var(--ink)] transition hover:border-[color:var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                href="#demo"
+              >
+                See what it can do
+              </a>
+              <a
+                class="flex items-center gap-2 rounded-full border border-[color:var(--divider)] px-5 py-2 text-sm text-[color:var(--ink)] transition hover:border-[color:var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                href="https://github.com/rufuspollock/taskgraph"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    fill="currentColor"
+                    d="M12 .5a11.5 11.5 0 0 0-3.64 22.43c.58.1.8-.25.8-.57v-2.08c-3.24.7-3.92-1.4-3.92-1.4-.53-1.35-1.3-1.7-1.3-1.7-1.06-.72.08-.7.08-.7 1.17.08 1.79 1.2 1.79 1.2 1.05 1.8 2.76 1.28 3.44.98.1-.76.4-1.28.72-1.58-2.58-.3-5.3-1.3-5.3-5.8 0-1.28.46-2.32 1.2-3.14-.12-.3-.52-1.52.12-3.18 0 0 .98-.32 3.22 1.2a11.2 11.2 0 0 1 5.86 0c2.24-1.52 3.22-1.2 3.22-1.2.64 1.66.24 2.88.12 3.18.74.82 1.2 1.86 1.2 3.14 0 4.52-2.72 5.5-5.32 5.78.42.36.8 1.08.8 2.18v3.24c0 .32.2.68.8.56A11.5 11.5 0 0 0 12 .5Z"
+                  />
+                </svg>
+                GitHub
+              </a>
+            </div>
+          </div>
+          <div class="terminal-glow rounded-3xl border border-[color:var(--divider)] bg-white/40 p-6">
+            <div class="flex items-center justify-between text-xs text-[color:var(--muted-ink)]">
+              <span>taskgraph demo</span>
+              <span>local</span>
+            </div>
+            <div class="mt-4 rounded-2xl border border-[color:var(--divider)] bg-[#171410] p-4 text-sm text-[#f7f1e8]">
+              <p><span class="text-[color:var(--green-1)]">$</span> tg add "plan flower show"</p>
+              <p><span class="text-[color:var(--green-1)]">$</span> tg add "map launch dependencies" --type epic</p>
+              <p><span class="text-[color:var(--green-1)]">$</span> tg list --label flowershow</p>
+              <p class="mt-3 text-[#cbbfac]">.taskgraph/issues.md</p>
+              <p>- [ ] plan flower show #flowershow</p>
+              <p>- [ ] map launch dependencies #t-epic</p>
+              <p class="mt-3 text-[#cbbfac]">derived index</p>
+              <p>roots: 2  labels: 2  db: synced</p>
+            </div>
+            <p class="mt-4 text-xs leading-relaxed text-[color:var(--muted-ink)]">
+              Markdown files remain authoritative. The SQLite index exists to make listing and graph views fast.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="install" class="grid gap-6 border-t border-[color:var(--divider)] pt-10 sm:grid-cols-[1fr_1.3fr]">
+        <div class="flex flex-col gap-3">
+          <h2 class="text-xl font-semibold">Install</h2>
+          <p class="text-sm leading-relaxed text-[color:var(--muted-ink)]">
+            Use the release installer on macOS or Linux. It supports amd64 and arm64 and installs to
+            <code class="text-[color:var(--ink)]">${INSTALL_DIR:-$HOME/.local/bin}</code> by default.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-[color:var(--divider)] bg-white/55 p-5">
+          <p class="text-xs uppercase tracking-[0.24em] text-[color:var(--muted-ink)]">latest release</p>
+          <pre class="mt-3 overflow-x-auto rounded-xl border border-[color:var(--divider)] bg-[#171410] p-4 text-sm text-[#f7f1e8]"><code>curl -fsSL https://raw.githubusercontent.com/rufuspollock/taskgraph/main/scripts/install.sh | bash</code></pre>
+          <p class="mt-3 text-sm text-[color:var(--muted-ink)]">
+            Then run <code class="text-[color:var(--ink)]">tg init</code> in a project and start capturing tasks.
+          </p>
+        </div>
+      </section>
+
+      <section class="grid gap-6 border-t border-[color:var(--divider)] pt-10 sm:grid-cols-2">
+        <h2 class="text-xl font-semibold">Why TaskGraph</h2>
+        <ul class="flex flex-col gap-4 text-sm leading-relaxed text-[color:var(--muted-ink)]">
+          <li>Capture tasks quickly with <code class="text-[color:var(--ink)]">tg add</code> and keep moving.</li>
+          <li>Store authoritative task data in markdown, not in a hidden app database.</li>
+          <li>Use a derived SQLite index for fast list and graph-style queries.</li>
+          <li>Work naturally with AI tools that need local, inspectable planning context.</li>
+        </ul>
+      </section>
+
+      <section class="grid gap-6 sm:grid-cols-3">
+        <div class="rounded-2xl border border-[color:var(--divider)] p-5">
+          <h3 class="text-sm font-semibold">Capture</h3>
+          <p class="mt-2 text-sm leading-relaxed text-[color:var(--muted-ink)]">
+            Add tasks into <code class="text-[color:var(--ink)]">.taskgraph/issues.md</code> with labels and types stored inline as markdown tags.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-[color:var(--divider)] p-5">
+          <h3 class="text-sm font-semibold">List</h3>
+          <p class="mt-2 text-sm leading-relaxed text-[color:var(--muted-ink)]">
+            Query the indexed task set with filters like <code class="text-[color:var(--ink)]">--label</code> without giving up markdown as the source of truth.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-[color:var(--divider)] p-5">
+          <h3 class="text-sm font-semibold">Graph</h3>
+          <p class="mt-2 text-sm leading-relaxed text-[color:var(--muted-ink)]">
+            See a compact overview of real roots and child structure with <code class="text-[color:var(--ink)]">tg graph</code>.
+          </p>
+        </div>
+      </section>
+
+      <section id="demo" class="flex flex-col gap-6 border-t border-[color:var(--divider)] pt-10">
+        <div class="flex flex-col gap-2">
+          <h2 class="text-xl font-semibold">See what it can do</h2>
+          <p class="text-sm text-[color:var(--muted-ink)]">
+            A lightweight workflow from quick capture to graph-native planning.
+          </p>
+        </div>
+        <div class="grid gap-6 sm:grid-cols-[1.1fr_0.9fr]">
+          <div class="rounded-2xl border border-[color:var(--divider)] bg-white/60 p-5">
+            <pre class="overflow-x-auto text-sm leading-7 text-[color:var(--ink)]"><code>tg init
+tg add "buy milk"
+tg add "plan flower show" --labels flowershow,events
+tg add "map launch dependencies" --type epic
+tg create "book dentist"
+tg inbox
+tg list --label flowershow
+tg graph --depth 3</code></pre>
+          </div>
+          <div class="rounded-2xl border border-[color:var(--divider)] bg-white/40 p-5 text-sm text-[color:var(--muted-ink)]">
+            <p class="font-semibold text-[color:var(--ink)]">What this gives you</p>
+            <div class="mt-4 flex flex-col gap-4">
+              <p>Fast inbox capture without committing to a heavyweight task system.</p>
+              <p>One local task substrate that can span scattered markdown files and checklist hierarchies.</p>
+              <p>A practical base for future graph-native planning commands like <code class="text-[color:var(--ink)]">tg next</code>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid gap-6 border-t border-[color:var(--divider)] pt-10 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div class="flex flex-col gap-2">
+          <h2 class="text-xl font-semibold">Local-first by design</h2>
+          <p class="text-sm leading-relaxed text-[color:var(--muted-ink)]">
+            TaskGraph keeps markdown authoritative and treats the database as rebuildable derived state.
+            That keeps the system inspectable, scriptable, and hard to get trapped inside.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <a
+            class="rounded-full border border-transparent bg-[color:var(--ink)] px-5 py-2 text-sm text-[color:var(--bg-start)] transition hover:translate-y-[-1px]"
+            href="#install"
+          >
+            Install
+          </a>
+          <a
+            class="rounded-full border border-[color:var(--divider)] px-5 py-2 text-sm text-[color:var(--ink)] transition hover:border-[color:var(--accent)]"
+            href="https://github.com/rufuspollock/taskgraph#usage"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Read usage docs
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
