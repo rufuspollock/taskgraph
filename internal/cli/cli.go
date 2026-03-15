@@ -46,6 +46,8 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runGraph(args[1:], stdout, stderr)
 	case "index":
 		return runIndex(stdout, stderr)
+	case "projects":
+		return runProjects(stdout, stderr)
 	case "migrate-beads":
 		return runMigrateBeads(stdout, stderr)
 	default:
@@ -81,6 +83,7 @@ COMMANDS
   graph [--depth N] [--max-children N] [--all]
                     Print a compact graph overview from root nodes
   index             Build SQLite index from markdown files
+  projects          List project files with open task counts
   migrate-beads     Import .beads/issues.jsonl into .taskgraph/issues.md
   help              Show this help
 
@@ -316,6 +319,37 @@ func runIndex(stdout io.Writer, stderr io.Writer) error {
 		nodeCount,
 		filepath.Join(root, ".taskgraph", "taskgraph.db"),
 	)
+	return nil
+}
+
+func runProjects(stdout io.Writer, stderr io.Writer) error {
+	cwd, err := effectiveCWD()
+	if err != nil {
+		return err
+	}
+	root, found, err := project.FindTaskgraphRoot(cwd)
+	if err != nil {
+		return err
+	}
+	if !found {
+		fmt.Fprintln(stderr, "No .taskgraph found. Run `tg init` or `tg add \"task text\"`.")
+		return errors.New("not initialized")
+	}
+
+	dbPath := filepath.Join(root, ".taskgraph", "taskgraph.db")
+	projects, err := indexer.ReadProjectNodes(dbPath)
+	if err != nil {
+		return err
+	}
+
+	if len(projects) == 0 {
+		fmt.Fprintln(stdout, "No projects found. Run `tg index` to scan markdown files.")
+		return nil
+	}
+
+	for _, p := range projects {
+		fmt.Fprintf(stdout, "%-40s  %d open  (%s)\n", p.Title, p.OpenTaskCount, p.Path)
+	}
 	return nil
 }
 
