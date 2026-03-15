@@ -239,6 +239,54 @@ ORDER BY path ASC, line ASC, id ASC
 	return out, nil
 }
 
+type ProjectNode struct {
+	ID              string
+	Title           string
+	Path            string
+	OpenTaskCount   int
+	SourceMTimeUnix int64
+}
+
+func ReadProjectNodes(dbPath string) ([]ProjectNode, error) {
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("open db: %w", err)
+	}
+	defer db.Close()
+
+	rows, err := db.Query(`
+SELECT
+    f.id,
+    f.title,
+    f.path,
+    f.source_mtime_unix,
+    COUNT(CASE WHEN c.state = 'open' THEN 1 END) AS open_task_count
+FROM index_nodes f
+JOIN index_node_labels l ON l.node_id = f.id AND l.label = 't-project'
+LEFT JOIN index_nodes c ON c.path = f.path AND c.kind = 'checklist'
+WHERE f.kind = 'file'
+GROUP BY f.id
+ORDER BY f.source_mtime_unix DESC, f.path ASC
+`)
+	if err != nil {
+		return nil, fmt.Errorf("query project nodes: %w", err)
+	}
+	defer rows.Close()
+
+	var out []ProjectNode
+	for rows.Next() {
+		var p ProjectNode
+		if err := rows.Scan(&p.ID, &p.Title, &p.Path, &p.SourceMTimeUnix, &p.OpenTaskCount); err != nil {
+			return nil, fmt.Errorf("scan project node: %w", err)
+		}
+		out = append(out, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate project nodes: %w", err)
+	}
+	return out, nil
+}
+
 func readLabelsByNodeID(db *sql.DB) (map[string][]string, error) {
 	rows, err := db.Query(`
 SELECT node_id, label
