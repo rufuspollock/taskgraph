@@ -73,6 +73,9 @@ func BuildNodes(root string) ([]Node, error) {
 			return nil, err
 		}
 		fileNodes := indexMarkdown(string(content), rel, source, info.ModTime().Unix())
+		if source == "scan" && len(fileNodes) > 0 && fileNodes[0].Kind == "file" {
+			fileNodes[0].Labels = append(fileNodes[0].Labels, tasks.TypeLabel("project"))
+		}
 		nodes = append(nodes, fileNodes...)
 	}
 
