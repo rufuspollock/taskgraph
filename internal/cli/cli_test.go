@@ -982,6 +982,40 @@ func TestMigrateBeadsRequiresLocalBeadsAndTaskgraphDirs(t *testing.T) {
 	}
 }
 
+func TestProjectsCommand(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "")
+
+	mustMkdirAll(t, filepath.Join(dir, "projects"))
+	mustWrite(t, filepath.Join(dir, "projects", "alpha.md"), strings.Join([]string{
+		"# Alpha",
+		"",
+		"- [ ] Task one",
+		"- [ ] Task two",
+		"- [x] Done task",
+	}, "\n")+"\n")
+
+	_, stderr, err := run([]string{"index"})
+	if err != nil {
+		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
+	}
+
+	stdout, stderr, err := run([]string{"projects"})
+	if err != nil {
+		t.Fatalf("projects returned err: %v stderr=%q", err, stderr)
+	}
+	if !strings.Contains(stdout, "alpha") && !strings.Contains(stdout, "Alpha") {
+		t.Fatalf("expected output to contain project name, got %q", stdout)
+	}
+	if !strings.Contains(stdout, "2") {
+		t.Fatalf("expected output to contain open task count '2', got %q", stdout)
+	}
+}
+
 func run(args []string) (string, string, error) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
