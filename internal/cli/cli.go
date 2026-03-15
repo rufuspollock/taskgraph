@@ -658,6 +658,9 @@ func hasTypedGraphRootAncestor(byID map[string]indexer.Node, node indexer.Node) 
 }
 
 func isTypedGraphRoot(node indexer.Node) bool {
+	if node.Kind == "file" {
+		return false
+	}
 	taskType, err := tasks.ExtractTaskTypeFromLabels(node.Labels)
 	if err != nil {
 		return false
