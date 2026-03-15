@@ -104,6 +104,52 @@ func TestBuildNodesDoesNotCarryChecklistParentAcrossHeadings(t *testing.T) {
 	}
 }
 
+func TestBuildNodesInfersProjectForFiles(t *testing.T) {
+	root := t.TempDir()
+	mustMkdirAll(t, filepath.Join(root, "projects"))
+	mustWrite(t, filepath.Join(root, "projects", "my-project.md"), "- [ ] Task A\n- [ ] Task B\n")
+	mustMkdirAll(t, filepath.Join(root, ".taskgraph"))
+	mustWrite(t, filepath.Join(root, ".taskgraph", "issues.md"), "- [ ] Captured task\n")
+
+	nodes, err := BuildNodes(root)
+	if err != nil {
+		t.Fatalf("BuildNodes returned error: %v", err)
+	}
+
+	// File node for projects/my-project.md should have t-project label.
+	var projectFileNode *Node
+	var issuesFileNode *Node
+	for i := range nodes {
+		if nodes[i].Kind == "file" && nodes[i].Path == "projects/my-project.md" {
+			projectFileNode = &nodes[i]
+		}
+		if nodes[i].Kind == "file" && nodes[i].Path == ".taskgraph/issues.md" {
+			issuesFileNode = &nodes[i]
+		}
+	}
+	if projectFileNode == nil {
+		t.Fatalf("expected file node for projects/my-project.md")
+	}
+	if !hasLabel(projectFileNode.Labels, "t-project") {
+		t.Fatalf("expected projects/my-project.md file node to have label t-project, got %v", projectFileNode.Labels)
+	}
+	if issuesFileNode == nil {
+		t.Fatalf("expected file node for .taskgraph/issues.md")
+	}
+	if hasLabel(issuesFileNode.Labels, "t-project") {
+		t.Fatalf("expected .taskgraph/issues.md file node NOT to have label t-project, got %v", issuesFileNode.Labels)
+	}
+}
+
+func hasLabel(labels []string, target string) bool {
+	for _, l := range labels {
+		if l == target {
+			return true
+		}
+	}
+	return false
+}
+
 func assertHasNodePath(t *testing.T, nodes []Node, want string) {
 	t.Helper()
 	for _, n := range nodes {
