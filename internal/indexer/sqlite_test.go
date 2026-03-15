@@ -237,6 +237,135 @@ func TestReadGraphNodesReturnsTreeMetadataAndLabels(t *testing.T) {
 	}
 }
 
+func TestReadProjectNodes(t *testing.T) {
+	root := t.TempDir()
+	dbPath := filepath.Join(root, "taskgraph.db")
+
+	nodes := []Node{
+		// Project A file node with t-project label, mtime=200 (newer)
+		{
+			ID:            "proj-a",
+			Kind:          "file",
+			Title:         "Project A",
+			State:         "unknown",
+			Path:          "project-a.md",
+			Line:          0,
+			Context:       "project-a",
+			SearchText:    "project a",
+			Source:        "scan",
+			Labels:        []string{"t-project"},
+			SourceMTimeUnix: 200,
+		},
+		// Project A: open checklist child 1
+		{
+			ID:       "pa-task-1",
+			Kind:     "checklist",
+			Title:    "Task 1",
+			State:    "open",
+			Path:     "project-a.md",
+			Line:     1,
+			ParentID: "proj-a",
+			Context:  "project-a > Task 1",
+			SearchText: "task 1",
+			Source:   "scan",
+		},
+		// Project A: open checklist child 2
+		{
+			ID:       "pa-task-2",
+			Kind:     "checklist",
+			Title:    "Task 2",
+			State:    "open",
+			Path:     "project-a.md",
+			Line:     2,
+			ParentID: "proj-a",
+			Context:  "project-a > Task 2",
+			SearchText: "task 2",
+			Source:   "scan",
+		},
+		// Project A: closed checklist child (should not count)
+		{
+			ID:       "pa-task-3",
+			Kind:     "checklist",
+			Title:    "Task 3",
+			State:    "closed",
+			Path:     "project-a.md",
+			Line:     3,
+			ParentID: "proj-a",
+			Context:  "project-a > Task 3",
+			SearchText: "task 3",
+			Source:   "scan",
+		},
+		// Project B file node with t-project label, mtime=100 (older)
+		{
+			ID:            "proj-b",
+			Kind:          "file",
+			Title:         "Project B",
+			State:         "unknown",
+			Path:          "project-b.md",
+			Line:          0,
+			Context:       "project-b",
+			SearchText:    "project b",
+			Source:        "scan",
+			Labels:        []string{"t-project"},
+			SourceMTimeUnix: 100,
+		},
+		// Project B: open checklist child
+		{
+			ID:       "pb-task-1",
+			Kind:     "checklist",
+			Title:    "Task 1",
+			State:    "open",
+			Path:     "project-b.md",
+			Line:     1,
+			ParentID: "proj-b",
+			Context:  "project-b > Task 1",
+			SearchText: "task 1",
+			Source:   "scan",
+		},
+		// Inbox file node without t-project label (should not appear)
+		{
+			ID:         "inbox",
+			Kind:       "file",
+			Title:      "Inbox",
+			State:      "unknown",
+			Path:       "inbox.md",
+			Line:       0,
+			Context:    "inbox",
+			SearchText: "inbox",
+			Source:     "scan",
+		},
+	}
+
+	if err := RebuildSQLite(dbPath, nodes); err != nil {
+		t.Fatalf("RebuildSQLite returned error: %v", err)
+	}
+
+	got, err := ReadProjectNodes(dbPath)
+	if err != nil {
+		t.Fatalf("ReadProjectNodes returned error: %v", err)
+	}
+
+	if len(got) != 2 {
+		t.Fatalf("expected 2 projects, got %d: %#v", len(got), got)
+	}
+
+	// First should be Project A (mtime 200, newer)
+	if got[0].ID != "proj-a" {
+		t.Fatalf("expected first project ID %q, got %q", "proj-a", got[0].ID)
+	}
+	if got[0].OpenTaskCount != 2 {
+		t.Fatalf("expected first project OpenTaskCount 2, got %d", got[0].OpenTaskCount)
+	}
+
+	// Second should be Project B (mtime 100, older)
+	if got[1].ID != "proj-b" {
+		t.Fatalf("expected second project ID %q, got %q", "proj-b", got[1].ID)
+	}
+	if got[1].OpenTaskCount != 1 {
+		t.Fatalf("expected second project OpenTaskCount 1, got %d", got[1].OpenTaskCount)
+	}
+}
+
 func findNodeByID(t *testing.T, nodes []Node, id string) Node {
 	t.Helper()
 	for _, node := range nodes {
