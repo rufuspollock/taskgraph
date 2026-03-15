@@ -32,3 +32,9 @@
 - [ ] ➕2026-03-03 [task-wbv] reflect on how we doc patterns vs implement stuff in actual tooling
 - [ ] ➕2026-03-03 [tgcl-vpf] support closing non-inbox tasks by indexed location with safe write-back semantics
 - [ ] ➕2026-03-06 [task-u6e] support for task status in `[ ]` section as per https://publish.obsidian.md/tasks/Other+Plugins/Dataview
+- [ ] ➕2026-03-15 [task-lei] Think through task types: write mini essay on projects vs products. GTD 'projects' range from 'book hair appointment' to full products - we need a useful distinction between these scales #design #concepts
+- [ ] ➕2026-03-15 [task-qnq] tg index and tg graph don't handle projects-as-whole-files well. A project file (e.g. fixtures/rufus-projects/*.md) should appear as a node but currently doesn't. Need to diagnose whether this is an index issue or graph issue #bug #graph #index
+- [ ] ➕2026-03-15 [task-drm] Create test examples for tg graph to systematically work out what's wrong - build a small test project tree and verify graph output makes sense #graph #testing
+- [ ] ➕2026-03-15 [task-hu6] Feature: support ignoring subdirectories from tg index (e.g. .tgignore or config option to exclude paths like node_modules, attic, etc.) #feature #index
+- [ ] ➕2026-03-15 [task-ctb] Meta: tg is good for capture but not yet for planning/structuring work. What's missing to go from inbox to actionable plans? Probably needs AI integration - e.g. 'tg plan' that uses AI to help prioritize, sequence, and structure tasks from the graph #meta #planning #ai
+- [ ] ➕2026-03-15 [task-g8h] tg close supports search so i can be typing and when i find the task i want i can close it
