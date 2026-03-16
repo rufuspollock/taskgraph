@@ -1,0 +1,370 @@
+---
+title: TaskGraph - Decide what to do next
+description: "TaskGraph is a local-first CLI for moving from a high-level area of work to a concrete next task, with markdown as source of truth."
+layout: plain
+---
+
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+  :root {
+    --bg: #fafafa;
+    --ink: #111111;
+    --muted: #5f5f5f;
+    --line: #e4e4e4;
+    --soft: #f3f3f3;
+    --accent: #111111;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Mono", "SF Mono", "Menlo", "Consolas", monospace;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: #e9e9e9;
+  }
+  .section-rule {
+    border-top: 1px solid var(--line);
+  }
+  .fade-in {
+    animation: fade-in 700ms ease both;
+  }
+  .graph-stage {
+    border: 1px solid var(--line);
+    background: white;
+    overflow: hidden;
+  }
+  .graph-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .graph-grid {
+    stroke: rgba(0, 0, 0, 0.03);
+    stroke-width: 1;
+  }
+  .graph-edge {
+    fill: none;
+    stroke: #dddddd;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .graph-edge.active {
+    animation: svg-edge-focus 7s infinite;
+  }
+  .graph-node-pill {
+    fill: #fcfcfc;
+    stroke: #ececec;
+    stroke-width: 2;
+  }
+  .graph-node-pill.active {
+    animation: svg-node-focus 7s infinite;
+  }
+  .graph-node-pill.leaf.active {
+    animation: svg-leaf-focus 7s infinite;
+  }
+  .graph-node-label {
+    fill: #6a6a6a;
+    font-size: 18px;
+  }
+  .graph-node-label.active {
+    animation: svg-label-focus 7s infinite;
+  }
+  .graph-node-label.leaf {
+    fill: var(--ink);
+  }
+  .graph-pulse {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    opacity: 0;
+    animation: svg-pulse 7s infinite;
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes svg-edge-focus {
+    0%, 100% {
+      stroke: #dddddd;
+      stroke-width: 2;
+    }
+    12%, 24% {
+      stroke: var(--ink);
+      stroke-width: 2.6;
+    }
+    48%, 60% {
+      stroke: var(--ink);
+      stroke-width: 2.6;
+    }
+    76%, 96% {
+      stroke: var(--ink);
+      stroke-width: 2.8;
+    }
+  }
+  @keyframes svg-node-focus {
+    0%, 100% {
+      stroke: #ececec;
+      fill: #fcfcfc;
+    }
+    12%, 24% {
+      stroke: #d6d6d6;
+      fill: #f6f6f6;
+    }
+    48%, 60% {
+      stroke: #d6d6d6;
+      fill: #f6f6f6;
+    }
+    76%, 96% {
+      stroke: var(--ink);
+      fill: #f2f2f2;
+    }
+  }
+  @keyframes svg-leaf-focus {
+    0%, 70%, 100% {
+      stroke: #ececec;
+      fill: #fcfcfc;
+    }
+    76%, 96% {
+      stroke: var(--ink);
+      fill: #f1f1f1;
+    }
+  }
+  @keyframes svg-label-focus {
+    0%, 100% {
+      fill: #6a6a6a;
+    }
+    12%, 24% {
+      fill: var(--ink);
+    }
+    48%, 60% {
+      fill: var(--ink);
+    }
+    76%, 96% {
+      fill: var(--ink);
+    }
+  }
+  @keyframes svg-pulse {
+    0%, 72%, 100% {
+      opacity: 0;
+      transform: scale(0.7);
+      transform-origin: center;
+    }
+    78% {
+      opacity: 0.8;
+      transform: scale(1);
+      transform-origin: center;
+    }
+    92% {
+      opacity: 0;
+      transform: scale(1.9);
+      transform-origin: center;
+    }
+  }
+</style>
+
+<main class="mx-auto max-w-5xl px-6 py-12 sm:px-8 sm:py-16">
+  <section class="mx-auto max-w-4xl text-center fade-in">
+    <p class="text-[15px] text-[color:var(--ink)]">TaskGraph</p>
+    <h1 class="mx-auto mt-4 max-w-3xl text-4xl font-medium leading-tight sm:text-6xl">
+      Decide what to do next.
+    </h1>
+    <p class="mx-auto mt-5 max-w-3xl text-sm leading-7 text-[color:var(--muted)] sm:text-[15px]">
+      TaskGraph is a local-first CLI for quick task capture and graph-native planning. It keeps markdown
+      authoritative, uses a derived index for fast queries, and helps you move from a high-level area of
+      work to a concrete leaf task.
+    </p>
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm">
+      <a class="border border-[color:var(--ink)] bg-[color:var(--ink)] px-4 py-2 text-white" href="#install">
+        Install
+      </a>
+      <a class="border border-[color:var(--line)] px-4 py-2 text-[color:var(--ink)]" href="#quickstart">
+        Quickstart
+      </a>
+    </div>
+    <p class="mt-6 text-[13px] text-[color:var(--muted)]">
+      Start high. Choose a branch. Go down fast. Find a leaf.
+    </p>
+  </section>
+  <section class="mx-auto mt-12 max-w-4xl fade-in">
+    <div class="graph-stage">
+      <svg
+        class="graph-svg"
+        viewBox="0 0 1200 420"
+        role="img"
+        aria-label="Task graph moving from a project through a selected branch to a leaf task"
+      >
+        <defs>
+          <pattern id="graph-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M 28 0 L 0 0 0 28" class="graph-grid" />
+          </pattern>
+        </defs>
+        <rect x="0" y="0" width="1200" height="420" fill="url(#graph-grid)" />
+        <path class="graph-edge active" d="M600 66 L412 160" />
+        <path class="graph-edge" d="M600 66 L788 160" />
+        <path class="graph-edge active" d="M412 160 L312 250" />
+        <path class="graph-edge" d="M412 160 L500 250" />
+        <path class="graph-edge" d="M788 160 L788 250" />
+        <path class="graph-edge active" d="M312 250 L252 336" />
+        <path class="graph-edge" d="M312 250 L430 336" />
+        <path class="graph-edge" d="M788 250 L788 336" />
+        <g>
+          <rect class="graph-node-pill active" x="520" y="36" width="160" height="44" rx="22" />
+          <text class="graph-node-label active" x="600" y="63" text-anchor="middle">Project</text>
+        </g>
+        <g>
+          <rect class="graph-node-pill active" x="320" y="138" width="184" height="44" rx="22" />
+          <text class="graph-node-label active" x="412" y="165" text-anchor="middle">Epic research</text>
+        </g>
+        <g>
+          <rect class="graph-node-pill" x="704" y="138" width="168" height="44" rx="22" />
+          <text class="graph-node-label" x="788" y="165" text-anchor="middle">Epic launch</text>
+        </g>
+        <g>
+          <rect class="graph-node-pill active" x="226" y="228" width="172" height="44" rx="22" />
+          <text class="graph-node-label active" x="312" y="255" text-anchor="middle">Task: graph model</text>
+        </g>
+        <g>
+          <rect class="graph-node-pill" x="400" y="228" width="200" height="44" rx="22" />
+          <text class="graph-node-label" x="500" y="255" text-anchor="middle">Task: import notes</text>
+        </g>
+        <g>
+          <rect class="graph-node-pill" x="710" y="228" width="156" height="44" rx="22" />
+          <text class="graph-node-label" x="788" y="255" text-anchor="middle">Task: docs</text>
+        </g>
+        <g>
+          <rect class="graph-node-pill leaf active" x="162" y="314" width="180" height="44" rx="22" />
+          <text class="graph-node-label leaf active" x="252" y="341" text-anchor="middle">leaf: review notes</text>
+        </g>
+        <g>
+          <rect class="graph-node-pill leaf" x="338" y="314" width="184" height="44" rx="22" />
+          <text class="graph-node-label leaf" x="430" y="341" text-anchor="middle">leaf: draft outline</text>
+        </g>
+        <g>
+          <rect class="graph-node-pill leaf" x="698" y="314" width="180" height="44" rx="22" />
+          <text class="graph-node-label leaf" x="788" y="341" text-anchor="middle">leaf: email John</text>
+        </g>
+        <circle class="graph-pulse" cx="252" cy="336" r="18" />
+      </svg>
+    </div>
+    <div class="mt-4 grid gap-4 text-xs text-[color:var(--muted)] sm:grid-cols-3">
+      <p>High-level orientation tells you which area matters.</p>
+      <p>Selective descent narrows the branch instead of dumping every leaf.</p>
+      <p>The point is a real next action, not a better-organized vague project.</p>
+    </div>
+  </section>
+  <section id="install" class="section-rule mx-auto mt-20 max-w-4xl pt-10">
+    <p class="text-[15px] font-medium">## Install</p>
+    <div class="mt-5 max-w-3xl">
+      <p class="text-sm leading-7 text-[color:var(--muted)]">
+        Install the latest release on macOS or Linux, then initialize a project and start capturing tasks.
+      </p>
+      <pre class="mt-5 overflow-x-auto border border-[color:var(--line)] bg-[color:var(--soft)] p-5 text-sm leading-7 text-[color:var(--ink)]"><code>curl -fsSL https://raw.githubusercontent.com/rufuspollock/taskgraph/main/scripts/install.sh | bash</code></pre>
+      <p class="mt-4 text-sm leading-7 text-[color:var(--muted)]">
+        Task data lives in markdown. The SQLite database is derived state only and can be rebuilt.
+      </p>
+    </div>
+  </section>
+  <section id="quickstart" class="section-rule mx-auto mt-16 max-w-4xl pt-10">
+    <p class="text-[15px] font-medium">## Quickstart</p>
+    <div class="mt-5 grid gap-10 sm:grid-cols-[1.05fr_0.95fr]">
+      <div>
+        <pre class="overflow-x-auto border border-[color:var(--line)] bg-white p-5 text-sm leading-7 text-[color:var(--ink)]"><code>tg init
+tg add "buy milk"
+tg add "plan flower show" --labels flowershow,events
+tg add "map launch dependencies" --type epic
+tg create "book dentist"
+tg inbox
+tg list --label flowershow
+tg graph --depth 3</code></pre>
+      </div>
+      <div class="space-y-5 text-sm leading-7 text-[color:var(--muted)]">
+        <p>
+          <span class="text-[color:var(--ink)]">Capture quickly.</span> `tg add` and `tg create` make it
+          easy to get tasks into the system without breaking flow.
+        </p>
+        <p>
+          <span class="text-[color:var(--ink)]">Keep markdown authoritative.</span> Inbox tasks live in
+          <code class="text-[color:var(--ink)]">.taskgraph/issues.md</code>, and labels stay inline as
+          markdown tags.
+        </p>
+        <p>
+          <span class="text-[color:var(--ink)]">Query the graph.</span> `tg list` and `tg graph` use a
+          derived SQLite index so you can move quickly without hiding your data in a proprietary layer.
+        </p>
+      </div>
+    </div>
+  </section>
+  <section id="vision" class="section-rule mx-auto mt-16 max-w-4xl pt-10">
+    <p class="text-[15px] font-medium">## Vision</p>
+    <div class="mt-5 max-w-3xl space-y-6 text-sm leading-7 text-[color:var(--muted)]">
+      <p>
+        The core problem is not capture by itself. The harder problem is deciding what to work on next
+        without burning twenty minutes digging through projects, notes, and vague half-tasks.
+      </p>
+      <p>
+        A giant flat list does not solve that. It just gives you a better organized version of overwhelm.
+        Stopping at "work on this project" does not solve it either, because a project is still too vague
+        to tell you what to do with the next thirty minutes.
+      </p>
+      <p>
+        What matters is movement between levels. Start high enough to choose a direction. Then descend
+        quickly until you hit a real leaf task. If a branch fails to produce a clear next action, that is
+        useful information too: it may be blocked, it may need breaking down, or it may simply not be ripe
+        yet.
+      </p>
+      <p>
+        This is why the graph matters. It preserves the relationship between high-level choices and concrete
+        actions. It lets you practice selective descent: choose a branch, open that branch, keep opening it,
+        and surface a few real candidate leaves instead of every leaf in the universe.
+      </p>
+      <div class="border border-[color:var(--line)] bg-white p-5 text-[13px] leading-7 text-[color:var(--ink)]">
+        <p>Start high.</p>
+        <p>Choose a branch.</p>
+        <p>Go down fast.</p>
+        <p>Find a leaf.</p>
+        <p>If there isn't a good leaf, learn why.</p>
+        <p>Then cycle.</p>
+      </div>
+      <p>
+        TaskGraph is intended to make that graph legible and traversable. AI then helps interpret, rank,
+        clarify, and guide. The tool should not replace judgment. It should provide solid local structure
+        for judgment to work on.
+      </p>
+    </div>
+  </section>
+  <section class="section-rule mx-auto mt-16 max-w-4xl pt-10">
+    <div class="flex flex-wrap items-center gap-3 text-sm">
+      <a class="border border-[color:var(--ink)] bg-[color:var(--ink)] px-4 py-2 text-white" href="#install">
+        Install
+      </a>
+      <a
+        class="border border-[color:var(--line)] px-4 py-2 text-[color:var(--ink)]"
+        href="https://github.com/rufuspollock/taskgraph#usage"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Read usage
+      </a>
+      <a
+        class="border border-[color:var(--line)] px-4 py-2 text-[color:var(--ink)]"
+        href="https://github.com/rufuspollock/taskgraph"
+        target="_blank"
+        rel="noreferrer"
+      >
+        GitHub
+      </a>
+    </div>
+  </section>
+</main>
