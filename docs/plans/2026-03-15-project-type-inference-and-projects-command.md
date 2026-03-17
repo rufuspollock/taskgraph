@@ -483,3 +483,13 @@ go build -o tg ./cmd/tg
 git add -A
 git commit -m "chore: smoke test adjustments for project inference"
 ```
+
+---
+
+## Follow-up tasks
+
+Discovered during implementation and smoke testing:
+
+- [ ] **Scope project inference heuristic**: current "every scanned .md = project" is too broad. Scope to files in a configurable `projects/` directory (default `projects/`), settable in `config.yml`. Most repos have docs, plans, fixtures etc. that should not be projects.
+- [ ] **Better test fixtures**: current fixtures in `fixtures/rufus-projects/` are private data. Need proper synthetic fixtures for testing `tg projects` and `tg graph` against realistic project structures.
+- [ ] **Handle completed plan docs**: plan files in `docs/plans/` contain checklist items that get indexed as tasks. Need a way to mark a plan as done so its tasks do not show up in `tg list` or `tg projects`.
