@@ -24,7 +24,7 @@ func TestImportBeadsIssuesRequiresIssuesJSONL(t *testing.T) {
 	dir := t.TempDir()
 	mustMkdirAll(t, filepath.Join(dir, ".beads"))
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "")
 
 	_, err := ImportBeadsIssues(dir)
 	if err == nil {
@@ -39,7 +39,7 @@ func TestImportBeadsIssuesMapsStatusesAndSkipsTombstones(t *testing.T) {
 	dir := t.TempDir()
 	mustMkdirAll(t, filepath.Join(dir, ".beads"))
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] existing\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] existing\n")
 	mustWrite(t, filepath.Join(dir, ".beads", "issues.jsonl"), strings.Join([]string{
 		`{"id":"pl-1","title":"Open item","status":"open"}`,
 		`{"id":"pl-2","title":"Closed item","status":"closed"}`,
@@ -57,7 +57,7 @@ func TestImportBeadsIssuesMapsStatusesAndSkipsTombstones(t *testing.T) {
 		t.Fatalf("expected 1 tombstone skipped, got %d", summary.SkippedTombstone)
 	}
 
-	got := mustRead(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	got := mustRead(t, filepath.Join(dir, "INBOX.md"))
 	if !strings.Contains(got, "- [ ] [beads:pl-1] Open item\n") {
 		t.Fatalf("expected open issue line, got: %q", got)
 	}
@@ -73,7 +73,7 @@ func TestImportBeadsIssuesErrorsOnMalformedJSONWithLineNumber(t *testing.T) {
 	dir := t.TempDir()
 	mustMkdirAll(t, filepath.Join(dir, ".beads"))
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "")
 	mustWrite(t, filepath.Join(dir, ".beads", "issues.jsonl"), "{bad json}\n")
 
 	_, err := ImportBeadsIssues(dir)

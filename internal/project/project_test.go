@@ -99,7 +99,7 @@ func TestInitAtCreatesFilesAndIsIdempotent(t *testing.T) {
 	}
 
 	assertExists(t, filepath.Join(root, ".taskgraph", "config.yml"))
-	assertExists(t, filepath.Join(root, ".taskgraph", "issues.md"))
+	assertExists(t, filepath.Join(root, "INBOX.md"))
 	assertExists(t, filepath.Join(root, ".taskgraph", ".gitignore"))
 	ignore := mustReadFile(t, filepath.Join(root, ".taskgraph", ".gitignore"))
 	if !strings.Contains(ignore, "taskgraph.db\n") {

@@ -14,10 +14,10 @@ Build Task Graph as a practical, daily-use system that helps decide what to do n
 
 1. `tg create` (alias: `tg add`, future alias `tg capture`)
 Capture tasks and ideas instantly in a GTD-style flow.
-Status: `Implemented` (`tg add`/`tg create` append to `.taskgraph/issues.md` and refresh index DB).
+Status: `Implemented` (`tg add`/`tg create` append to `INBOX.md` and refresh index DB).
 
 2. `tg inbox`
-See and process captured inbox items from `.taskgraph/issues.md`.
+See and process captured inbox items from `INBOX.md`.
 Status: `Implemented` (raw inbox checklist view).
 
 3. `tg list`

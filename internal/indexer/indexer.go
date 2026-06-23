@@ -46,7 +46,7 @@ func BuildNodes(root string) ([]Node, error) {
 		return nil, err
 	}
 
-	tasksPath := filepath.Join(root, ".taskgraph", "issues.md")
+	tasksPath := filepath.Join(root, "INBOX.md")
 	if _, err := os.Stat(tasksPath); err == nil {
 		files = appendUnique(files, tasksPath)
 	}
@@ -60,7 +60,7 @@ func BuildNodes(root string) ([]Node, error) {
 		}
 		rel = filepath.ToSlash(rel)
 		source := "scan"
-		if rel == ".taskgraph/issues.md" {
+		if rel == "INBOX.md" {
 			source = "tasks_md"
 		}
 

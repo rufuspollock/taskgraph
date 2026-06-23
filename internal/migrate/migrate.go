@@ -22,7 +22,7 @@ type beadsIssue struct {
 	Status string `json:"status"`
 }
 
-// ImportBeadsIssues imports ./.beads/issues.jsonl into ./.taskgraph/issues.md.
+// ImportBeadsIssues imports ./.beads/issues.jsonl into ./INBOX.md.
 func ImportBeadsIssues(cwd string) (Summary, error) {
 	summary := Summary{}
 
@@ -37,7 +37,7 @@ func ImportBeadsIssues(cwd string) (Summary, error) {
 		return summary, fmt.Errorf("missing input file %s: %w", inputPath, err)
 	}
 
-	issuesPath := filepath.Join(taskgraphDir, "issues.md")
+	issuesPath := filepath.Join(cwd, "INBOX.md")
 	in, err := os.Open(inputPath)
 	if err != nil {
 		return summary, fmt.Errorf("open input %s: %w", inputPath, err)

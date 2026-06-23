@@ -57,7 +57,7 @@ func FindTaskgraphRoot(startDir string) (string, bool, error) {
 	}
 }
 
-// InitAt creates .taskgraph/config.yml and .taskgraph/issues.md inside dir.
+// InitAt creates .taskgraph/config.yml and the root INBOX.md inside dir.
 func InitAt(dir string) (string, bool, error) {
 	if dir == "" {
 		return "", false, errors.New("directory is required")
@@ -71,7 +71,7 @@ func InitAt(dir string) (string, bool, error) {
 	if err := ensureConfig(filepath.Join(base, "config.yml"), dir); err != nil {
 		return "", false, err
 	}
-	if err := ensureFile(filepath.Join(base, "issues.md")); err != nil {
+	if err := ensureFile(filepath.Join(dir, "INBOX.md")); err != nil {
 		return "", false, err
 	}
 	if err := ensureTaskgraphGitignore(filepath.Join(base, ".gitignore")); err != nil {

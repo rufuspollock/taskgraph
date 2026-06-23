@@ -10,7 +10,7 @@ import (
 func TestBuildNodesScansMarkdownAndParsesHierarchy(t *testing.T) {
 	root := t.TempDir()
 	mustMkdirAll(t, filepath.Join(root, ".taskgraph"))
-	mustWrite(t, filepath.Join(root, ".taskgraph", "issues.md"), "- [ ] Captured task\n")
+	mustWrite(t, filepath.Join(root, "INBOX.md"), "- [ ] Captured task\n")
 	mustWrite(t, filepath.Join(root, "notes.md"), "# Project\n\n## Build\n- [ ] Ship\n- [x] Done\n")
 	mustMkdirAll(t, filepath.Join(root, ".hidden"))
 	mustWrite(t, filepath.Join(root, ".hidden", "ignored.md"), "- [ ] Ignore hidden\n")
@@ -27,7 +27,7 @@ func TestBuildNodesScansMarkdownAndParsesHierarchy(t *testing.T) {
 
 	// Included sources.
 	assertHasNodePath(t, nodes, "notes.md")
-	assertHasNodePath(t, nodes, ".taskgraph/issues.md")
+	assertHasNodePath(t, nodes, "INBOX.md")
 
 	// Excluded paths.
 	assertNoNodePath(t, nodes, ".hidden/ignored.md")
@@ -109,7 +109,7 @@ func TestBuildNodesInfersProjectForFiles(t *testing.T) {
 	mustMkdirAll(t, filepath.Join(root, "projects"))
 	mustWrite(t, filepath.Join(root, "projects", "my-project.md"), "- [ ] Task A\n- [ ] Task B\n")
 	mustMkdirAll(t, filepath.Join(root, ".taskgraph"))
-	mustWrite(t, filepath.Join(root, ".taskgraph", "issues.md"), "- [ ] Captured task\n")
+	mustWrite(t, filepath.Join(root, "INBOX.md"), "- [ ] Captured task\n")
 
 	nodes, err := BuildNodes(root)
 	if err != nil {
@@ -123,7 +123,7 @@ func TestBuildNodesInfersProjectForFiles(t *testing.T) {
 		if nodes[i].Kind == "file" && nodes[i].Path == "projects/my-project.md" {
 			projectFileNode = &nodes[i]
 		}
-		if nodes[i].Kind == "file" && nodes[i].Path == ".taskgraph/issues.md" {
+		if nodes[i].Kind == "file" && nodes[i].Path == "INBOX.md" {
 			issuesFileNode = &nodes[i]
 		}
 	}
@@ -134,10 +134,10 @@ func TestBuildNodesInfersProjectForFiles(t *testing.T) {
 		t.Fatalf("expected projects/my-project.md file node to have label t-project, got %v", projectFileNode.Labels)
 	}
 	if issuesFileNode == nil {
-		t.Fatalf("expected file node for .taskgraph/issues.md")
+		t.Fatalf("expected file node for INBOX.md")
 	}
 	if hasLabel(issuesFileNode.Labels, "t-project") {
-		t.Fatalf("expected .taskgraph/issues.md file node NOT to have label t-project, got %v", issuesFileNode.Labels)
+		t.Fatalf("expected INBOX.md file node NOT to have label t-project, got %v", issuesFileNode.Labels)
 	}
 }
 

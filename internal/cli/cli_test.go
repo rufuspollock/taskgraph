@@ -63,7 +63,7 @@ func TestInitCreatesTaskgraphFiles(t *testing.T) {
 		t.Fatalf("expected init output, got %q", stdout)
 	}
 	assertExists(t, filepath.Join(dir, ".taskgraph", "config.yml"))
-	assertExists(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	assertExists(t, filepath.Join(dir, "INBOX.md"))
 	assertExists(t, filepath.Join(dir, ".taskgraph", ".gitignore"))
 	assertExists(t, filepath.Join(dir, ".taskgraph", "taskgraph.db"))
 	if got := readFile(t, filepath.Join(dir, ".taskgraph", ".gitignore")); !strings.Contains(got, "taskgraph.db\n") {
@@ -86,12 +86,33 @@ func TestAddAutoInitsWhenMissing(t *testing.T) {
 		t.Fatalf("expected add confirmation, got %q", stdout)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	prefix := expectedPrefixForDir(dir)
 	if !matchesTaskLine(content, prefix, "first task") {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 	assertExists(t, filepath.Join(dir, ".taskgraph", "taskgraph.db"))
+}
+
+func TestAddMigratesLegacyIssuesToInboxBeforeAppending(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "issue-prefix: tg\n")
+	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] legacy task\n")
+
+	_, stderr, err := run([]string{"add", "new task"})
+	if err != nil {
+		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
+	}
+
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
+	if !strings.HasPrefix(content, "- [ ] legacy task\n") {
+		t.Fatalf("expected legacy content to be copied before append, got %q", content)
+	}
+	if !strings.Contains(content, "new task") {
+		t.Fatalf("expected new task in INBOX.md, got %q", content)
+	}
 }
 
 func TestAddUsesNearestAncestorTaskgraph(t *testing.T) {
@@ -107,7 +128,7 @@ func TestAddUsesNearestAncestorTaskgraph(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "config.yml"), []byte("prefix: root\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, ".taskgraph", "issues.md"), []byte(""), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "INBOX.md"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -125,9 +146,9 @@ func TestAddUsesNearestAncestorTaskgraph(t *testing.T) {
 		t.Fatalf("did not expect init output when ancestor exists: %q", stdout)
 	}
 
-	content := readFile(t, filepath.Join(root, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(root, "INBOX.md"))
 	if !matchesTaskLine(content, "root", "from nested") {
-		t.Fatalf("unexpected root issues.md content: %q", content)
+		t.Fatalf("unexpected root INBOX.md content: %q", content)
 	}
 }
 
@@ -140,10 +161,10 @@ func TestCreateIsAliasForAdd(t *testing.T) {
 		t.Fatalf("create returned err: %v stderr=%q", err, stderr)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	prefix := expectedPrefixForDir(dir)
 	if !matchesTaskLine(content, prefix, "alias task") {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 }
 
@@ -152,7 +173,7 @@ func TestInboxPrintsOnlyOpenChecklistLinesByDefault(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] a\n- [x] done\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] a\n- [x] done\n")
 
 	stdout, stderr, err := run([]string{"inbox"})
 	if err != nil {
@@ -168,7 +189,7 @@ func TestInboxAllPrintsOpenAndClosedChecklistLines(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] a\n- [x] done\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] a\n- [x] done\n")
 
 	stdout, stderr, err := run([]string{"inbox", "--all"})
 	if err != nil {
@@ -184,7 +205,7 @@ func TestInboxFiltersByLabel(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] a #flowershow\n- [ ] b #other\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] a #flowershow\n- [ ] b #other\n")
 
 	stdout, stderr, err := run([]string{"inbox", "--label", "flowershow"})
 	if err != nil {
@@ -200,7 +221,7 @@ func TestInboxFiltersByRepeatedLabelWithANDSemantics(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] a #flowershow #abc\n- [ ] b #flowershow\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] a #flowershow #abc\n- [ ] b #flowershow\n")
 
 	stdout, stderr, err := run([]string{"inbox", "--label", "flowershow", "--label", "abc"})
 	if err != nil {
@@ -216,7 +237,7 @@ func TestCloseUpdatesInboxTaskWithReason(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
 
 	stdout, stderr, err := run([]string{"close", "tg-abc", "done on phone"})
 	if err != nil {
@@ -226,10 +247,10 @@ func TestCloseUpdatesInboxTaskWithReason(t *testing.T) {
 		t.Fatalf("unexpected close output: %q", stdout)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	want := "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅" + time.Now().Format("2006-01-02") + " done on phone**\n"
 	if content != want {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 }
 
@@ -238,7 +259,7 @@ func TestCloseAllowsMissingReason(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
 
 	stdout, stderr, err := run([]string{"close", "tg-abc"})
 	if err != nil {
@@ -248,10 +269,10 @@ func TestCloseAllowsMissingReason(t *testing.T) {
 		t.Fatalf("unexpected close output: %q", stdout)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	want := "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅" + time.Now().Format("2006-01-02") + "**\n"
 	if content != want {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 }
 
@@ -260,7 +281,7 @@ func TestCloseTreatsNullReasonAsMissing(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
 
 	stdout, stderr, err := run([]string{"close", "tg-abc", "null"})
 	if err != nil {
@@ -270,10 +291,10 @@ func TestCloseTreatsNullReasonAsMissing(t *testing.T) {
 		t.Fatalf("unexpected close output: %q", stdout)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	want := "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅" + time.Now().Format("2006-01-02") + "**\n"
 	if content != want {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 }
 
@@ -282,7 +303,7 @@ func TestCloseReturnsErrorForUnknownID(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
 
 	_, stderr, err := run([]string{"close", "tg-missing", "done"})
 	if err == nil {
@@ -298,7 +319,7 @@ func TestCloseReturnsErrorForAlreadyClosedTask(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅2026-03-03 done**\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [x] ➕2026-03-03 [tg-abc] call Alice #home **✅2026-03-03 done**\n")
 
 	_, stderr, err := run([]string{"close", "tg-abc", "done again"})
 	if err == nil {
@@ -318,7 +339,7 @@ func TestCloseUpdatesIndexState(t *testing.T) {
 		t.Fatalf("init returned err: %v stderr=%q", err, stderr)
 	}
 
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] ➕2026-03-03 [tg-abc] call Alice #home\n")
 	_, stderr, err = run([]string{"index"})
 	if err != nil {
 		t.Fatalf("index returned err: %v stderr=%q", err, stderr)
@@ -771,7 +792,7 @@ func TestAddUsesTGCWDOverride(t *testing.T) {
 		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
 	}
 
-	content := readFile(t, filepath.Join(targetDir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(targetDir, "INBOX.md"))
 	if !strings.Contains(content, "from override") {
 		t.Fatalf("expected task in TG_CWD directory, got %q", content)
 	}
@@ -786,9 +807,9 @@ func TestAddSupportsLabelsFlag(t *testing.T) {
 		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	if !matchesTaskLine(content, expectedPrefixForDir(dir), "prep venue notes #flowershow #abc") {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 }
 
@@ -801,9 +822,9 @@ func TestAddSupportsTypeFlag(t *testing.T) {
 		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	if !matchesTaskLine(content, expectedPrefixForDir(dir), "plan launch #t-epic") {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 }
 
@@ -816,9 +837,9 @@ func TestCreateSupportsTypeFlag(t *testing.T) {
 		t.Fatalf("create returned err: %v stderr=%q", err, stderr)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	if !matchesTaskLine(content, expectedPrefixForDir(dir), "capture opportunity #t-idea") {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 }
 
@@ -840,16 +861,16 @@ func TestAddAllowsConfiguredCustomType(t *testing.T) {
 	chdir(t, dir)
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "issue-prefix: tg\nissue-types: research\n")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "")
 
 	_, stderr, err := run([]string{"add", "investigate options", "--type", "research"})
 	if err != nil {
 		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	if !strings.Contains(content, "investigate options #t-research") {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 }
 
@@ -901,9 +922,9 @@ func TestAddDeduplicatesExistingInlineLabels(t *testing.T) {
 		t.Fatalf("add returned err: %v stderr=%q", err, stderr)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	if !matchesTaskLine(content, expectedPrefixForDir(dir), "prep venue notes #flowershow #abc") {
-		t.Fatalf("unexpected issues.md content: %q", content)
+		t.Fatalf("unexpected INBOX.md content: %q", content)
 	}
 }
 
@@ -927,22 +948,22 @@ func TestAddUpdatesSQLiteIndex(t *testing.T) {
 
 	var count int
 	if err := db.QueryRow(
-		"SELECT COUNT(*) FROM index_nodes WHERE kind = 'checklist' AND path = '.taskgraph/issues.md'",
+		"SELECT COUNT(*) FROM index_nodes WHERE kind = 'checklist' AND path = 'INBOX.md'",
 	).Scan(&count); err != nil {
 		t.Fatalf("query failed: %v", err)
 	}
 	if count < 1 {
-		t.Fatalf("expected at least 1 checklist node for .taskgraph/issues.md, got %d", count)
+		t.Fatalf("expected at least 1 checklist node for INBOX.md, got %d", count)
 	}
 }
 
-func TestMigrateBeadsImportsIntoIssuesMarkdown(t *testing.T) {
+func TestMigrateBeadsImportsIntoInboxMarkdown(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
 
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustMkdirAll(t, filepath.Join(dir, ".beads"))
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "- [ ] existing\n")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "- [ ] existing\n")
 	mustWrite(t, filepath.Join(dir, ".beads", "issues.jsonl"), strings.Join([]string{
 		`{"id":"pl-1","title":"Open item","status":"open"}`,
 		`{"id":"pl-2","title":"Closed item","status":"closed"}`,
@@ -957,7 +978,7 @@ func TestMigrateBeadsImportsIntoIssuesMarkdown(t *testing.T) {
 		t.Fatalf("expected import summary, got %q", stdout)
 	}
 
-	content := readFile(t, filepath.Join(dir, ".taskgraph", "issues.md"))
+	content := readFile(t, filepath.Join(dir, "INBOX.md"))
 	if !strings.Contains(content, "- [ ] [beads:pl-1] Open item\n") {
 		t.Fatalf("missing open import line: %q", content)
 	}
@@ -988,7 +1009,7 @@ func TestProjectsCommand(t *testing.T) {
 
 	mustMkdirAll(t, filepath.Join(dir, ".taskgraph"))
 	mustWrite(t, filepath.Join(dir, ".taskgraph", "config.yml"), "")
-	mustWrite(t, filepath.Join(dir, ".taskgraph", "issues.md"), "")
+	mustWrite(t, filepath.Join(dir, "INBOX.md"), "")
 
 	mustMkdirAll(t, filepath.Join(dir, "projects"))
 	mustWrite(t, filepath.Join(dir, "projects", "alpha.md"), strings.Join([]string{

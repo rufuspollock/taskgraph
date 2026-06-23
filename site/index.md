@@ -296,7 +296,7 @@ tg graph --depth 3</code></pre>
         </p>
         <p>
           <span class="text-[color:var(--ink)]">Keep markdown authoritative.</span> Inbox tasks live in
-          <code class="text-[color:var(--ink)]">.taskgraph/issues.md</code>, and labels stay inline as
+          <code class="text-[color:var(--ink)]">INBOX.md</code>, and labels stay inline as
           markdown tags.
         </p>
         <p>

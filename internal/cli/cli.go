@@ -18,6 +18,7 @@ import (
 )
 
 const addUsage = "usage: tg add <task text> [--labels a,b] [--type name]"
+const inboxFileName = "INBOX.md"
 
 var graphLabelPattern = regexp.MustCompile(`(^|[\s(])#([A-Za-z0-9][A-Za-z0-9-]*)`)
 
@@ -71,20 +72,20 @@ USAGE
   tg -h | --help
 
 COMMANDS
-  init              Initialize .taskgraph in current directory
-  add <text>        Add a task to .taskgraph/issues.md (supports --labels, --type)
+  init              Initialize .taskgraph and INBOX.md in current directory
+  add <text>        Add a task to INBOX.md (supports --labels, --type)
   create <text>     Alias for add (supports --labels, --type)
   inbox [--all] [--label name]
-                    Print inbox checklist from .taskgraph/issues.md
+                    Print inbox checklist from INBOX.md
   close <id> [reason]
-                    Close an inbox task in .taskgraph/issues.md
+                    Close an inbox task in INBOX.md
   list [--all] [--label name]
                     Print indexed checklist tasks from SQLite
   graph [--depth N] [--max-children N] [--all]
                     Print a compact graph overview from root nodes
   index             Build SQLite index from markdown files
   projects          List project files with open task counts
-  migrate-beads     Import .beads/issues.jsonl into .taskgraph/issues.md
+  migrate-beads     Import .beads/issues.jsonl into INBOX.md
   help              Show this help
 
 EXAMPLES
@@ -106,7 +107,7 @@ EXAMPLES
 NOTES
   - tg add auto-initializes .taskgraph if missing
   - use --type with one allowed task type per task
-  - inbox is stored in .taskgraph/issues.md
+  - inbox is stored in INBOX.md
   - index DB is stored in .taskgraph/taskgraph.db
 `
 }
@@ -157,7 +158,10 @@ func runAdd(args []string, stdout io.Writer, stderr io.Writer) error {
 		}
 	}
 
-	taskFile := filepath.Join(root, ".taskgraph", "issues.md")
+	taskFile, err := ensureInboxForAdd(root)
+	if err != nil {
+		return err
+	}
 	prefix, err := project.ReadPrefix(root)
 	if err != nil {
 		return err
@@ -209,7 +213,7 @@ func runInbox(args []string, stdout io.Writer, stderr io.Writer) error {
 		return errors.New("not initialized")
 	}
 
-	lines, err := tasks.ReadChecklistLines(filepath.Join(root, ".taskgraph", "issues.md"))
+	lines, err := tasks.ReadChecklistLines(inboxPath(root))
 	if err != nil {
 		return err
 	}
@@ -245,7 +249,7 @@ func runClose(args []string, stdout io.Writer, stderr io.Writer) error {
 		return errors.New("not initialized")
 	}
 
-	taskFile := filepath.Join(root, ".taskgraph", "issues.md")
+	taskFile := inboxPath(root)
 	if err := tasks.CloseTask(taskFile, id, reason); err != nil {
 		fmt.Fprintln(stderr, err.Error())
 		return err
@@ -255,6 +259,42 @@ func runClose(args []string, stdout io.Writer, stderr io.Writer) error {
 	}
 	fmt.Fprintf(stdout, "Closed task: %s\n", id)
 	return nil
+}
+
+func inboxPath(root string) string {
+	return filepath.Join(root, inboxFileName)
+}
+
+func legacyIssuesPath(root string) string {
+	return filepath.Join(root, ".taskgraph", "issues.md")
+}
+
+func ensureInboxForAdd(root string) (string, error) {
+	path := inboxPath(root)
+	if _, err := os.Stat(path); err == nil {
+		return path, nil
+	} else if !os.IsNotExist(err) {
+		return "", err
+	}
+
+	legacyPath := legacyIssuesPath(root)
+	if b, err := os.ReadFile(legacyPath); err == nil {
+		if err := os.WriteFile(path, b, 0o644); err != nil {
+			return "", err
+		}
+		return path, nil
+	} else if !os.IsNotExist(err) {
+		return "", err
+	}
+
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return "", err
+	}
+	if err := f.Close(); err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 func runList(args []string, stdout io.Writer, stderr io.Writer) error {

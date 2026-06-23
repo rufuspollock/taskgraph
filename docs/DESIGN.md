@@ -4,7 +4,7 @@
 
 TaskGraph stores authoritative task data in markdown files.
 
-- `.taskgraph/issues.md` is the inbox source of truth.
+- `INBOX.md` in the repository root is the inbox source of truth.
 - Other markdown files remain the source of truth for indexed checklist items.
 - Labels are stored inline in markdown as tags such as `#flowershow`.
 
