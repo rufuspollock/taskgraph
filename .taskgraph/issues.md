@@ -39,3 +39,4 @@
 - [ ] ➕2026-03-15 [task-ctb] Meta: tg is good for capture but not yet for planning/structuring work. What's missing to go from inbox to actionable plans? Probably needs AI integration - e.g. 'tg plan' that uses AI to help prioritize, sequence, and structure tasks from the graph #meta #planning #ai
 - [ ] ➕2026-03-15 [task-g8h] tg close supports search so i can be typing and when i find the task i want i can close it
 - [ ] ➕2026-03-15 [task-vhe] Feature: support exclude paths in config.yml for tg index (e.g. exclude: [fixtures/, sandbox/, docs/plans/]) so irrelevant markdown files are not indexed. Separate from project inference - this is about controlling what gets indexed at all. #feature #index #config
+- [ ] ➕2026-03-17 [task-2s8] next thing to resume on is looking at last session and docs/plans/2026-03-15-project-type-inference-and-projects-command.md ⏭️
