@@ -2,7 +2,7 @@
 set -euo pipefail
 
 file="site/homepage-a.html"
-file2="site/index.html"
+file2="site/index.md"
 
 if [ ! -f "$file" ]; then
   echo "FAIL: $file does not exist"
@@ -35,9 +35,14 @@ checks2=(
   "curl -fsSL"
   "id=\"quickstart\""
   "id=\"vision\""
-  ">Project<"
   "<svg"
   "graph-svg"
+  "story-path"
+  "story-cursor"
+  "story-caption"
+  "needs breakdown"
+  "review notes"
+  "prefers-reduced-motion"
 )
 
 for pattern in "${checks2[@]}"; do
@@ -47,7 +52,7 @@ for pattern in "${checks2[@]}"; do
   fi
 done
 
-for disallowed in "Project A" "Project B" "Project C"; do
+for disallowed in "Project A" "Project B" "Project C" "svg-edge-focus" "svg-node-focus"; do
   if grep -q "$disallowed" "$file2"; then
     echo "FAIL: found obsolete label '$disallowed' in $file2"
     exit 1
@@ -59,4 +64,4 @@ if grep -q 'class="edge active"' "$file2"; then
   exit 1
 fi
 
-echo "PASS: primary index landing page contains required sections"
+echo "PASS: primary Markdown landing page contains the narrative graph animation"
