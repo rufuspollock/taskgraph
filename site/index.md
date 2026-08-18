@@ -31,10 +31,17 @@ layout: plain
   .section-rule {
     border-top: 1px solid var(--line);
   }
+  .quickstart-grid > * {
+    min-width: 0;
+  }
   .fade-in {
     animation: fade-in 700ms ease both;
   }
   .graph-stage {
+    --story-duration: 14s;
+    --blocked: #a94f3a;
+    --complete: #16704a;
+    position: relative;
     border: 1px solid var(--line);
     background: white;
     overflow: hidden;
@@ -45,45 +52,135 @@ layout: plain
     height: auto;
   }
   .graph-grid {
-    stroke: rgba(0, 0, 0, 0.03);
-    stroke-width: 1;
+    fill: rgba(17, 17, 17, 0.065);
   }
   .graph-edge {
     fill: none;
-    stroke: #dddddd;
-    stroke-width: 2;
+    stroke: #e2e2e2;
+    stroke-width: 1.5;
     stroke-linecap: round;
   }
-  .graph-edge.active {
-    animation: svg-edge-focus 7s infinite;
-  }
-  .graph-node-pill {
-    fill: #fcfcfc;
-    stroke: #ececec;
-    stroke-width: 2;
-  }
-  .graph-node-pill.active {
-    animation: svg-node-focus 7s infinite;
-  }
-  .graph-node-pill.leaf.active {
-    animation: svg-leaf-focus 7s infinite;
-  }
-  .graph-node-label {
-    fill: #6a6a6a;
-    font-size: 18px;
-  }
-  .graph-node-label.active {
-    animation: svg-label-focus 7s infinite;
-  }
-  .graph-node-label.leaf {
-    fill: var(--ink);
-  }
-  .graph-pulse {
+  .story-path {
     fill: none;
     stroke: var(--ink);
-    stroke-width: 1.5;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
     opacity: 0;
-    animation: svg-pulse 7s infinite;
+  }
+  .story-path-fail-1 {
+    animation: draw-fail-1 var(--story-duration) ease-in-out infinite;
+  }
+  .story-path-fail-2 {
+    animation: draw-fail-2 var(--story-duration) ease-in-out infinite;
+  }
+  .story-path-fail-3 {
+    stroke: var(--blocked);
+    animation: draw-fail-3 var(--story-duration) ease-in-out infinite;
+  }
+  .story-path-return {
+    stroke-dasharray: 0.04 0.045;
+    animation: draw-return var(--story-duration) ease-in-out infinite;
+  }
+  .story-path-success-1 {
+    animation: draw-success-1 var(--story-duration) ease-in-out infinite;
+  }
+  .story-path-success-2 {
+    animation: draw-success-2 var(--story-duration) ease-in-out infinite;
+  }
+  .story-path-success-3 {
+    stroke: var(--complete);
+    animation: draw-success-3 var(--story-duration) ease-in-out infinite;
+  }
+  .story-node {
+    color: #999999;
+    opacity: 0.68;
+  }
+  .story-node .node-box {
+    fill: #ffffff;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+  .story-node .node-label {
+    fill: currentColor;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .story-node .node-kicker {
+    fill: currentColor;
+    font-size: 10px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  .node-site {
+    animation: node-site-state var(--story-duration) ease-in-out infinite;
+  }
+  .node-launch-plan {
+    animation: node-launch-state var(--story-duration) ease-in-out infinite;
+  }
+  .node-deploy-checklist {
+    animation: node-deploy-state var(--story-duration) ease-in-out infinite;
+  }
+  .node-blocked {
+    animation: node-blocked-state var(--story-duration) ease-in-out infinite;
+  }
+  .node-taskgraph {
+    animation: node-taskgraph-state var(--story-duration) ease-in-out infinite;
+  }
+  .node-graph-model {
+    animation: node-graph-state var(--story-duration) ease-in-out infinite;
+  }
+  .node-review-work {
+    animation: node-review-state var(--story-duration) ease-in-out infinite;
+  }
+  .node-leaf {
+    animation: node-leaf-state var(--story-duration) ease-in-out infinite;
+  }
+  .story-cursor {
+    fill: var(--ink);
+    stroke: white;
+    stroke-width: 3;
+    vector-effect: non-scaling-stroke;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+    animation: move-cursor var(--story-duration) cubic-bezier(0.55, 0, 0.25, 1) infinite;
+  }
+  .story-status {
+    display: grid;
+    min-height: 56px;
+    grid-template-columns: 82px minmax(0, 1fr);
+    align-items: center;
+    border-top: 1px solid var(--line);
+    padding: 0 22px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .story-status-label {
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .story-caption-stack {
+    display: grid;
+    min-width: 0;
+  }
+  .story-caption {
+    grid-area: 1 / 1;
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  .story-caption-1 { animation: caption-1 var(--story-duration) ease infinite; }
+  .story-caption-2 { animation: caption-2 var(--story-duration) ease infinite; }
+  .story-caption-3 { color: var(--blocked); animation: caption-3 var(--story-duration) ease infinite; }
+  .story-caption-4 { animation: caption-4 var(--story-duration) ease infinite; }
+  .story-caption-5 { animation: caption-5 var(--story-duration) ease infinite; }
+  .story-caption-6 { color: var(--complete); animation: caption-6 var(--story-duration) ease infinite; }
+  .graph-stage:hover *,
+  .graph-stage:focus-within * {
+    animation-play-state: paused;
   }
   @keyframes fade-in {
     from {
@@ -95,81 +192,167 @@ layout: plain
       transform: translateY(0);
     }
   }
-  @keyframes svg-edge-focus {
-    0%, 100% {
-      stroke: #dddddd;
-      stroke-width: 2;
+  @keyframes draw-fail-1 {
+    0%, 11% { opacity: 0; stroke-dashoffset: 1; }
+    18%, 39% { opacity: 1; stroke-dashoffset: 0; }
+    47%, 100% { opacity: 0; stroke-dashoffset: 0; }
+  }
+  @keyframes draw-fail-2 {
+    0%, 18% { opacity: 0; stroke-dashoffset: 1; }
+    25%, 39% { opacity: 1; stroke-dashoffset: 0; }
+    47%, 100% { opacity: 0; stroke-dashoffset: 0; }
+  }
+  @keyframes draw-fail-3 {
+    0%, 25% { opacity: 0; stroke-dashoffset: 1; }
+    32%, 39% { opacity: 1; stroke-dashoffset: 0; }
+    47%, 100% { opacity: 0; stroke-dashoffset: 0; }
+  }
+  @keyframes draw-return {
+    0%, 38% { opacity: 0; stroke-dashoffset: 1; }
+    49%, 55% { opacity: 0.72; stroke-dashoffset: 0; }
+    62%, 100% { opacity: 0; stroke-dashoffset: 0; }
+  }
+  @keyframes draw-success-1 {
+    0%, 55% { opacity: 0; stroke-dashoffset: 1; }
+    64%, 100% { opacity: 1; stroke-dashoffset: 0; }
+  }
+  @keyframes draw-success-2 {
+    0%, 63% { opacity: 0; stroke-dashoffset: 1; }
+    73%, 100% { opacity: 1; stroke-dashoffset: 0; }
+  }
+  @keyframes draw-success-3 {
+    0%, 72% { opacity: 0; stroke-dashoffset: 1; }
+    82%, 100% { opacity: 1; stroke-dashoffset: 0; }
+  }
+  @keyframes node-site-state {
+    0%, 8%, 49%, 100% { color: #999999; opacity: 0.68; }
+    13%, 25% { color: var(--ink); opacity: 1; }
+    31%, 40% { color: var(--blocked); opacity: 1; }
+  }
+  @keyframes node-launch-state {
+    0%, 15%, 47%, 100% { color: #aaaaaa; opacity: 0.5; }
+    21%, 40% { color: var(--ink); opacity: 1; }
+  }
+  @keyframes node-deploy-state {
+    0%, 22%, 47%, 100% { color: #aaaaaa; opacity: 0.5; }
+    28%, 40% { color: var(--ink); opacity: 1; }
+  }
+  @keyframes node-blocked-state {
+    0%, 29%, 47%, 100% { color: #aaaaaa; opacity: 0.5; }
+    34%, 40% { color: var(--blocked); opacity: 1; }
+  }
+  @keyframes node-taskgraph-state {
+    0%, 52%, 100% { color: #999999; opacity: 0.68; }
+    58%, 94% { color: var(--ink); opacity: 1; }
+  }
+  @keyframes node-graph-state {
+    0%, 60%, 100% { color: #aaaaaa; opacity: 0.5; }
+    67%, 94% { color: var(--ink); opacity: 1; }
+  }
+  @keyframes node-review-state {
+    0%, 69%, 100% { color: #aaaaaa; opacity: 0.5; }
+    76%, 94% { color: var(--ink); opacity: 1; }
+  }
+  @keyframes node-leaf-state {
+    0%, 78%, 100% { color: #aaaaaa; opacity: 0.5; }
+    85%, 94% { color: var(--complete); opacity: 1; }
+  }
+  @keyframes move-cursor {
+    0%, 7% { opacity: 0; transform: translate(0, 0); }
+    10% { opacity: 1; transform: translate(230px, 0); }
+    18% { transform: translate(230px, 100px); }
+    25% { transform: translate(230px, 210px); }
+    32%, 39% { opacity: 1; transform: translate(230px, 320px); }
+    47% { transform: translate(230px, 0); }
+    55% { transform: translate(0, 0); }
+    63% { transform: translate(0, 100px); }
+    72% { transform: translate(0, 210px); }
+    82%, 94% { opacity: 1; transform: translate(0, 320px); }
+    100% { opacity: 0; transform: translate(0, 320px); }
+  }
+  @keyframes caption-1 {
+    0%, 2% { opacity: 0; transform: translateY(4px); }
+    5%, 9% { opacity: 1; transform: translateY(0); }
+    12%, 100% { opacity: 0; transform: translateY(-4px); }
+  }
+  @keyframes caption-2 {
+    0%, 9% { opacity: 0; transform: translateY(4px); }
+    12%, 27% { opacity: 1; transform: translateY(0); }
+    30%, 100% { opacity: 0; transform: translateY(-4px); }
+  }
+  @keyframes caption-3 {
+    0%, 28% { opacity: 0; transform: translateY(4px); }
+    31%, 40% { opacity: 1; transform: translateY(0); }
+    43%, 100% { opacity: 0; transform: translateY(-4px); }
+  }
+  @keyframes caption-4 {
+    0%, 41% { opacity: 0; transform: translateY(4px); }
+    44%, 55% { opacity: 1; transform: translateY(0); }
+    58%, 100% { opacity: 0; transform: translateY(-4px); }
+  }
+  @keyframes caption-5 {
+    0%, 56% { opacity: 0; transform: translateY(4px); }
+    59%, 79% { opacity: 1; transform: translateY(0); }
+    82%, 100% { opacity: 0; transform: translateY(-4px); }
+  }
+  @keyframes caption-6 {
+    0%, 80% { opacity: 0; transform: translateY(4px); }
+    83%, 96% { opacity: 1; transform: translateY(0); }
+    99%, 100% { opacity: 0; transform: translateY(-4px); }
+  }
+  @media (max-width: 640px) {
+    .graph-svg {
+      width: 110%;
+      max-width: none;
+      margin-left: -5%;
     }
-    12%, 24% {
-      stroke: var(--ink);
-      stroke-width: 2.6;
+    .story-node .node-label {
+      font-size: 17px;
     }
-    48%, 60% {
-      stroke: var(--ink);
-      stroke-width: 2.6;
+    .story-node .node-kicker {
+      font-size: 12px;
+      letter-spacing: 0.06em;
     }
-    76%, 96% {
-      stroke: var(--ink);
-      stroke-width: 2.8;
+    .story-status {
+      min-height: 64px;
+      grid-template-columns: 70px minmax(0, 1fr);
+      padding: 0 14px;
+      font-size: 11px;
     }
   }
-  @keyframes svg-node-focus {
-    0%, 100% {
-      stroke: #ececec;
-      fill: #fcfcfc;
+  @media (prefers-reduced-motion: reduce) {
+    .fade-in,
+    .graph-stage * {
+      animation: none;
     }
-    12%, 24% {
-      stroke: #d6d6d6;
-      fill: #f6f6f6;
+    .story-cursor,
+    .story-path-fail-1,
+    .story-path-fail-2,
+    .story-path-fail-3,
+    .story-path-return,
+    .story-caption {
+      display: none;
     }
-    48%, 60% {
-      stroke: #d6d6d6;
-      fill: #f6f6f6;
+    .story-path-success-1,
+    .story-path-success-2,
+    .story-path-success-3 {
+      opacity: 1;
+      stroke-dashoffset: 0;
     }
-    76%, 96% {
-      stroke: var(--ink);
-      fill: #f2f2f2;
+    .node-taskgraph,
+    .node-graph-model,
+    .node-review-work {
+      color: var(--ink);
+      opacity: 1;
     }
-  }
-  @keyframes svg-leaf-focus {
-    0%, 70%, 100% {
-      stroke: #ececec;
-      fill: #fcfcfc;
+    .node-leaf {
+      color: var(--complete);
+      opacity: 1;
     }
-    76%, 96% {
-      stroke: var(--ink);
-      fill: #f1f1f1;
-    }
-  }
-  @keyframes svg-label-focus {
-    0%, 100% {
-      fill: #6a6a6a;
-    }
-    12%, 24% {
-      fill: var(--ink);
-    }
-    48%, 60% {
-      fill: var(--ink);
-    }
-    76%, 96% {
-      fill: var(--ink);
-    }
-  }
-  @keyframes svg-pulse {
-    0%, 72%, 100% {
-      opacity: 0;
-      transform: scale(0.7);
-      transform-origin: center;
-    }
-    78% {
-      opacity: 0.8;
-      transform: scale(1);
-      transform-origin: center;
-    }
-    92% {
-      opacity: 0;
-      transform: scale(1.9);
-      transform-origin: center;
+    .story-caption-6 {
+      display: block;
+      opacity: 1;
+      transform: none;
     }
   }
 </style>
@@ -201,62 +384,95 @@ layout: plain
     <div class="graph-stage">
       <svg
         class="graph-svg"
-        viewBox="0 0 1200 420"
+        viewBox="0 0 720 470"
         role="img"
-        aria-label="Task graph moving from a project through a selected branch to a leaf task"
+        aria-label="Task graph animation: compare projects, descend into Site launch, discover that it needs breakdown, return to the project level, then descend through TaskGraph to the actionable leaf review notes"
       >
         <defs>
-          <pattern id="graph-grid" width="28" height="28" patternUnits="userSpaceOnUse">
-            <path d="M 28 0 L 0 0 0 28" class="graph-grid" />
+          <pattern id="graph-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <circle class="graph-grid" cx="1" cy="1" r="1" />
           </pattern>
         </defs>
-        <rect x="0" y="0" width="1200" height="420" fill="url(#graph-grid)" />
-        <path class="graph-edge active" d="M600 66 L412 160" />
-        <path class="graph-edge" d="M600 66 L788 160" />
-        <path class="graph-edge active" d="M412 160 L312 250" />
-        <path class="graph-edge" d="M412 160 L500 250" />
-        <path class="graph-edge" d="M788 160 L788 250" />
-        <path class="graph-edge active" d="M312 250 L252 336" />
-        <path class="graph-edge" d="M312 250 L430 336" />
-        <path class="graph-edge" d="M788 250 L788 336" />
-        <g>
-          <rect class="graph-node-pill active" x="520" y="36" width="160" height="44" rx="22" />
-          <text class="graph-node-label active" x="600" y="63" text-anchor="middle">Project</text>
+        <rect width="720" height="470" fill="url(#graph-grid)" />
+
+        <g aria-hidden="true">
+          <path class="graph-edge" d="M360 96 L360 148" />
+          <path class="graph-edge" d="M360 206 L360 258" />
+          <path class="graph-edge" d="M360 316 L360 368" />
+          <path class="graph-edge" d="M590 96 L590 148" />
+          <path class="graph-edge" d="M590 206 L590 258" />
+          <path class="graph-edge" d="M590 316 L590 368" />
+
+          <path class="story-path story-path-fail-1" pathLength="1" d="M590 96 L590 148" />
+          <path class="story-path story-path-fail-2" pathLength="1" d="M590 206 L590 258" />
+          <path class="story-path story-path-fail-3" pathLength="1" d="M590 316 L590 368" />
+          <path class="story-path story-path-return" pathLength="1" d="M590 438 L590 118 C590 108 580 108 570 108 L380 108 C370 108 360 108 360 118" />
+          <path class="story-path story-path-success-1" pathLength="1" d="M360 96 L360 148" />
+          <path class="story-path story-path-success-2" pathLength="1" d="M360 206 L360 258" />
+          <path class="story-path story-path-success-3" pathLength="1" d="M360 316 L360 368" />
         </g>
-        <g>
-          <rect class="graph-node-pill active" x="320" y="138" width="184" height="44" rx="22" />
-          <text class="graph-node-label active" x="412" y="165" text-anchor="middle">Epic research</text>
+
+        <g class="story-node node-writing">
+          <rect class="node-box" x="45" y="38" width="170" height="58" rx="8" />
+          <text class="node-kicker" x="61" y="58">project</text>
+          <text class="node-label" x="61" y="81">Book proposal</text>
         </g>
-        <g>
-          <rect class="graph-node-pill" x="704" y="138" width="168" height="44" rx="22" />
-          <text class="graph-node-label" x="788" y="165" text-anchor="middle">Epic launch</text>
+        <g class="story-node node-taskgraph">
+          <rect class="node-box" x="275" y="38" width="170" height="58" rx="8" />
+          <text class="node-kicker" x="291" y="58">project</text>
+          <text class="node-label" x="291" y="81">TaskGraph</text>
         </g>
-        <g>
-          <rect class="graph-node-pill active" x="226" y="228" width="172" height="44" rx="22" />
-          <text class="graph-node-label active" x="312" y="255" text-anchor="middle">Task: graph model</text>
+        <g class="story-node node-site">
+          <rect class="node-box" x="505" y="38" width="170" height="58" rx="8" />
+          <text class="node-kicker" x="521" y="58">project</text>
+          <text class="node-label" x="521" y="81">Site launch</text>
         </g>
-        <g>
-          <rect class="graph-node-pill" x="400" y="228" width="200" height="44" rx="22" />
-          <text class="graph-node-label" x="500" y="255" text-anchor="middle">Task: import notes</text>
+
+        <g class="story-node node-graph-model">
+          <rect class="node-box" x="275" y="148" width="170" height="58" rx="8" />
+          <text class="node-kicker" x="291" y="168">epic</text>
+          <text class="node-label" x="291" y="191">Graph model</text>
         </g>
-        <g>
-          <rect class="graph-node-pill" x="710" y="228" width="156" height="44" rx="22" />
-          <text class="graph-node-label" x="788" y="255" text-anchor="middle">Task: docs</text>
+        <g class="story-node node-review-work">
+          <rect class="node-box" x="275" y="258" width="170" height="58" rx="8" />
+          <text class="node-kicker" x="291" y="278">task</text>
+          <text class="node-label" x="291" y="301">Review research</text>
         </g>
-        <g>
-          <rect class="graph-node-pill leaf active" x="162" y="314" width="180" height="44" rx="22" />
-          <text class="graph-node-label leaf active" x="252" y="341" text-anchor="middle">leaf: review notes</text>
+        <g class="story-node node-leaf">
+          <rect class="node-box" x="275" y="368" width="170" height="58" rx="8" />
+          <text class="node-kicker" x="291" y="388">next action</text>
+          <text class="node-label" x="291" y="411">Review notes</text>
         </g>
-        <g>
-          <rect class="graph-node-pill leaf" x="338" y="314" width="184" height="44" rx="22" />
-          <text class="graph-node-label leaf" x="430" y="341" text-anchor="middle">leaf: draft outline</text>
+
+        <g class="story-node node-launch-plan">
+          <rect class="node-box" x="505" y="148" width="170" height="58" rx="8" />
+          <text class="node-kicker" x="521" y="168">epic</text>
+          <text class="node-label" x="521" y="191">Launch plan</text>
         </g>
-        <g>
-          <rect class="graph-node-pill leaf" x="698" y="314" width="180" height="44" rx="22" />
-          <text class="graph-node-label leaf" x="788" y="341" text-anchor="middle">leaf: email John</text>
+        <g class="story-node node-deploy-checklist">
+          <rect class="node-box" x="505" y="258" width="170" height="58" rx="8" />
+          <text class="node-kicker" x="521" y="278">task</text>
+          <text class="node-label" x="521" y="301">Deploy site</text>
         </g>
-        <circle class="graph-pulse" cx="252" cy="336" r="18" />
+        <g class="story-node node-blocked">
+          <rect class="node-box" x="505" y="368" width="170" height="58" rx="8" />
+          <text class="node-kicker" x="521" y="388">no next action</text>
+          <text class="node-label" x="521" y="411">Needs breakdown</text>
+        </g>
+
+        <circle class="story-cursor" aria-hidden="true" cx="360" cy="118" r="5" />
       </svg>
+      <div class="story-status" aria-hidden="true">
+        <span class="story-status-label">TaskGraph</span>
+        <span class="story-caption-stack">
+          <span class="story-caption story-caption-1">Orient across the work that matters.</span>
+          <span class="story-caption story-caption-2">Choose a promising branch and inspect it.</span>
+          <span class="story-caption story-caption-3">No actionable leaf. This branch needs breakdown.</span>
+          <span class="story-caption story-caption-4">Back up instead of forcing a vague task.</span>
+          <span class="story-caption story-caption-5">Choose another branch and descend quickly.</span>
+          <span class="story-caption story-caption-6">Do next: review notes.</span>
+        </span>
+      </div>
     </div>
     <div class="mt-4 grid gap-4 text-xs text-[color:var(--muted)] sm:grid-cols-3">
       <p>High-level orientation tells you which area matters.</p>
@@ -278,7 +494,7 @@ layout: plain
   </section>
   <section id="quickstart" class="section-rule mx-auto mt-16 max-w-4xl pt-10">
     <p class="text-[15px] font-medium">## Quickstart</p>
-    <div class="mt-5 grid gap-10 sm:grid-cols-[1.05fr_0.95fr]">
+    <div class="quickstart-grid mt-5 grid gap-10 sm:grid-cols-[1.05fr_0.95fr]">
       <div>
         <pre class="overflow-x-auto border border-[color:var(--line)] bg-white p-5 text-sm leading-7 text-[color:var(--ink)]"><code>tg init
 tg add "buy milk"

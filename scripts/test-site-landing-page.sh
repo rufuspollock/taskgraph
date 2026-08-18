@@ -43,6 +43,8 @@ checks2=(
   "needs breakdown"
   "review notes"
   "prefers-reduced-motion"
+  "quickstart-grid"
+  "min-width: 0"
 )
 
 for pattern in "${checks2[@]}"; do
