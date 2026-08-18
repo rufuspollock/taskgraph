@@ -394,7 +394,6 @@ layout: plain
           </pattern>
         </defs>
         <rect width="720" height="470" fill="url(#graph-grid)" />
-
         <g aria-hidden="true">
           <path class="graph-edge" d="M360 96 L360 148" />
           <path class="graph-edge" d="M360 206 L360 258" />
@@ -402,7 +401,6 @@ layout: plain
           <path class="graph-edge" d="M590 96 L590 148" />
           <path class="graph-edge" d="M590 206 L590 258" />
           <path class="graph-edge" d="M590 316 L590 368" />
-
           <path class="story-path story-path-fail-1" pathLength="1" d="M590 96 L590 148" />
           <path class="story-path story-path-fail-2" pathLength="1" d="M590 206 L590 258" />
           <path class="story-path story-path-fail-3" pathLength="1" d="M590 316 L590 368" />
@@ -411,7 +409,6 @@ layout: plain
           <path class="story-path story-path-success-2" pathLength="1" d="M360 206 L360 258" />
           <path class="story-path story-path-success-3" pathLength="1" d="M360 316 L360 368" />
         </g>
-
         <g class="story-node node-writing">
           <rect class="node-box" x="45" y="38" width="170" height="58" rx="8" />
           <text class="node-kicker" x="61" y="58">project</text>
@@ -427,7 +424,6 @@ layout: plain
           <text class="node-kicker" x="521" y="58">project</text>
           <text class="node-label" x="521" y="81">Site launch</text>
         </g>
-
         <g class="story-node node-graph-model">
           <rect class="node-box" x="275" y="148" width="170" height="58" rx="8" />
           <text class="node-kicker" x="291" y="168">epic</text>
@@ -443,7 +439,6 @@ layout: plain
           <text class="node-kicker" x="291" y="388">next action</text>
           <text class="node-label" x="291" y="411">Review notes</text>
         </g>
-
         <g class="story-node node-launch-plan">
           <rect class="node-box" x="505" y="148" width="170" height="58" rx="8" />
           <text class="node-kicker" x="521" y="168">epic</text>
@@ -459,7 +454,6 @@ layout: plain
           <text class="node-kicker" x="521" y="388">no next action</text>
           <text class="node-label" x="521" y="411">Needs breakdown</text>
         </g>
-
         <circle class="story-cursor" aria-hidden="true" cx="360" cy="118" r="5" />
       </svg>
       <div class="story-status" aria-hidden="true">

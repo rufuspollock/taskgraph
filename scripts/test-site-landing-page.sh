@@ -61,6 +61,16 @@ for disallowed in "Project A" "Project B" "Project C" "svg-edge-focus" "svg-node
   fi
 done
 
+if awk '
+  /<svg/ { inside_svg = 1 }
+  inside_svg && /^[[:space:]]*$/ { found_blank = 1 }
+  /<\/svg>/ { inside_svg = 0 }
+  END { exit(found_blank ? 0 : 1) }
+' "$file2"; then
+  echo "FAIL: blank line inside SVG will terminate the Markdown raw HTML block"
+  exit 1
+fi
+
 if grep -q 'class="edge active"' "$file2"; then
   echo "FAIL: found obsolete HTML edge hero markup in $file2"
   exit 1
